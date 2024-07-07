@@ -19,3 +19,18 @@ compose-build:
 
 compose-down:
 	docker-compose down -v
+
+valid:
+	composer validate	
+
+dump:
+	composer dump-autoload
+
+lint:
+	composer exec --verbose phpcs -- --standard=PSR12 --colors public
+
+lint-fix:
+	composer exec --verbose phpcbf -- --standard=PSR12 --colors public
+
+analyse:
+	vendor/bin/phpstan analyse --level 9 public
