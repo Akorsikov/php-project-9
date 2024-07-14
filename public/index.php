@@ -1,9 +1,4 @@
 <?php
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\Factory\AppFactory;
-
-require __DIR__ . '/../vendor/autoload.php';
 
 /**
  * Instantiate App
@@ -12,6 +7,14 @@ require __DIR__ . '/../vendor/autoload.php';
  * a supported PSR-7 implementation of your choice e.g.: Slim PSR-7 and a supported
  * ServerRequest creator (included with Slim PSR-7)
  */
+
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Slim\Factory\AppFactory;
+use Slim\Views\PhpRenderer;
+
+require __DIR__ . '/../vendor/autoload.php';
+
 $app = AppFactory::create();
 
 // Add Routing Middleware
@@ -32,9 +35,9 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 // Define app routes
 $app->get('/', function (Request $request, Response $response, $args) {
-    $response->getBody()->write("Hello, Alex!");
-    return $response;
-});
+    $renderer = new PhpRenderer(__DIR__ . '/../templates');
+    return $renderer->render($response, 'main.phtml', $args);
+})->setName('main');
 
 // Run app
 $app->run();
