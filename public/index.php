@@ -34,10 +34,26 @@ $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 // Define app routes
-$app->get('/', function (Request $request, Response $response, $args) {
+$app->get('/', function (Request $request, Response $response) {
     $renderer = new PhpRenderer(__DIR__ . '/../templates');
-    return $renderer->render($response, 'main.phtml', $args);
+    return $renderer->render($response, 'main.phtml');
 })->setName('main');
+
+$app->post('/urls', function (Request $request, Response $response) {
+    $url = $request->getParsedBodyParam('url_name');
+
+    // 1 - вариант
+    // $connString = "hostt port=5432 dbname=websites_db user=aleksandr password=123456";
+    // $connectionDB = pg_connect($=localhosconnString);
+
+    // 2 - вариант
+    // postgresql://sites_db_user:vqEoglOCba3yVva54BoB93y1SYMA4q6r@dpg-cq4qdieehbks73bftqkg-a.frankfurt-postgres.render.com/sites_db
+    $connString = "postgresql://sites_db_user:vqEoglOCba3yVva54BoB93y1SYMA4q6r@dpg-cq4qdieehbks73bftqkg-a.frankfurt-postgres.render.com/sites_db port=5432 dbname=sites_db user=sites_db_user password=vqEoglOCba3yVva54BoB93y1SYMA4q6r";
+    $connectionDB = new \PDO($connString);
+    $params = ['name' => $url, 'connectionDB' => $connectionDB];
+    $renderer = new PhpRenderer(__DIR__ . '/../templates');
+    return $renderer->render($response, 'check.phtml', $params);
+})->setName('check');
 
 // Run app
 $app->run();

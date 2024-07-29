@@ -2,6 +2,9 @@ PORT ?= 8000
 start:
 	PHP_CLI_SERVER_WORKERS=5 php -S 0.0.0.0:$(PORT) -t public
 
+localhost:
+	php -S localhost:8000 -t public public/index.php
+
 setup:
 	composer install
 
@@ -19,6 +22,9 @@ compose-build:
 
 compose-down:
 	docker-compose down -v
+
+update:
+	composer update
 
 valid:
 	composer validate	
