@@ -21,6 +21,7 @@
         "slim/psr7": "^1.7",
         "slim/php-view": "^3.2",
         "slim/slim": " ^4.12",
-        "slim/twig-view": "^3.4"
+        "slim/twig-view": "^3.4",
+        "vlucas/valitron": "^1.4"
     }
 }

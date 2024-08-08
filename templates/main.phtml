@@ -29,21 +29,24 @@
                     <p class="lead">Бесплатно проверяйте сайты на SEO пригодность</p>
                     <form action="/valid" method="post" class="row">
                         <div class="col-8">
-                        <label for="text" class="visually-hidden">Url для проверки</label>
-                        <input
-                            type="text"
-                            name="url_name"
-                            required
-                            value="" class="form-control form-control-lg"
-                            placeholder="https://www.example.com"
-                        >
-                                    </div>
+                            <label for="text" class="visually-hidden">Url для проверки</label>
+                            <input
+                                type="text"
+                                name="url_name"
+                                value="<?= $urlName; ?>"
+                                class="form-control form-control-lg <?= isset($errors) ? 'is-invalid' : '';?>"
+                                placeholder="https://www.example.com"
+                            >
+                            <?php if (isset($errors)) : ?>
+                            <div class="invalid-feedback">
+                                <?= in_array('Urlname is required', $errors) ? 'URL не должен быть пустым' : 'Некорректный URL'; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
                         <div class="col-2">
                             <input type="submit" class="btn btn-primary btn-lg ms-3 px-5 text-uppercase mx-3" value="Проверить">
                         </div>
-
                     </form>
-
                 </div>
             </div>
         </div>
