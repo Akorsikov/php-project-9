@@ -21,6 +21,9 @@
             </ul>
         </nav>
     </header>
+    <?php if (isset($flashMessage)): ?>
+        <div class="alert alert-success" role="alert"><?= $flashMessage ?></div>
+    <?php endif; ?>
     <main class="flex-grow-1">
         <div class="container-lg mt-3">
             <h1>Сайт: <?= $name; ?></h1>

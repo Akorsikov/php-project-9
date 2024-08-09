@@ -13,14 +13,47 @@ use Slim\Http\Response;
 // use Psr\Http\Message\ResponseInterface as Response;     // не знает getParsedBodyParam()
 // use Psr\Http\Message\ServerRequestInterface as Request; // не знает withRedirect()
 use Psr\Http\Message\UriInterface;
-use DI\Container;
+// use Psr\Container\ContainerInterface;
+use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
 use Slim\Views\PhpRenderer;
 use Valitron\Validator;
+use Slim\Flash\Messages;
+use Slim\Routing\RouteContext;
+
+use function DI\string;
 
 require __DIR__ . '/../vendor/autoload.php';
 
+$containerBuilder = new ContainerBuilder();
+
+$containerBuilder->addDefinitions(
+    [
+        'flash' => function () {
+            $storage = [];
+            return new Messages($storage);
+        }
+    ]
+);
+
+AppFactory::setContainer($containerBuilder->build());
+
 $app = AppFactory::create();
+
+// Add session start middleware
+$app->add(
+    function ($request, $next) {
+        // Start PHP session
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            session_start();
+        }
+
+        // Change flash message storage
+        $this->get('flash')->__construct($_SESSION);
+
+        return $next->handle($request);
+    }
+);
 
 // Add Routing Middleware
 $app->addRoutingMiddleware();
@@ -62,14 +95,14 @@ $router = $app->getRouteCollector()->getRouteParser();
 // Add renderer
 $renderer = new PhpRenderer(__DIR__ . '/../templates');
 
+
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer) {
 
     return $renderer->render($response, 'main.phtml');
 })->setName('main');
 
-$app->post('/valid', function ($request, Response $response) use ($connectionDB, $router, $renderer) {
-    // phpstan ругался при: use Psr\Http\Message\ServerRequestInterface as Request;
+$app->post('/urls', function ($request, Response $response) use ($connectionDB, $renderer) {
     $urlName = $request->getParsedBodyParam('url_name');
 
     $rules = ['required', 'url', ['lengthMax', 255]];
@@ -77,17 +110,29 @@ $app->post('/valid', function ($request, Response $response) use ($connectionDB,
     $validation->mapFieldRules('urlname', $rules);
 
     if ($validation->validate()) {
-        $insertQuery = "INSERT INTO urls (name) VALUES (:name)";
-        $stmt = $connectionDB->prepare($insertQuery);
-        $stmt->bindParam(':name', $urlName);
+        $extractQuery = "SELECT id FROM urls WHERE name=:urlname";
+        $stmt = $connectionDB->prepare($extractQuery);
+        $stmt->bindParam(':urlname', $urlName);
         $stmt->execute();
-        // phpstan ругался при: use Psr\Http\Message\ResponseInterface as Response;
-        $id = $connectionDB->lastInsertId();
+        $resultQueryDB = $stmt->fetch();
 
-        $url = $router->urlFor('test', ['id' => (string) $id]);
+        if (empty($resultQueryDB)) {
+            $insertQuery = "INSERT INTO urls (name) VALUES (:name)";
+            $stmt1 = $connectionDB->prepare($insertQuery);
+            $stmt1->bindParam(':name', $urlName);
+            $stmt1->execute();
+            $id = $connectionDB->lastInsertId();
+            $flashMessage = 'Страница успешно добавлена';
+        } else {
+            $id = is_array($resultQueryDB) ? $resultQueryDB['id'] : null;
+            $flashMessage = 'Страница уже существует';
+        }
 
-        // phpstan ругался при: use Psr\Http\Message\ResponseInterface as Response;
-        return $response->withRedirect($url);
+            // Set flash message for next request
+            $this->get('flash')->addMessage('success', $flashMessage);
+            $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$id"]);
+
+            return $response->withStatus(302)->withHeader('Location', $url);
     }
     $errors = $validation->errors();
     $errorMessages = is_bool($errors) ? null : $errors['urlname'];
@@ -97,7 +142,7 @@ $app->post('/valid', function ($request, Response $response) use ($connectionDB,
     ];
 
     return $renderer->render($response, 'main.phtml', $params);
-})->setName('valid');
+})->setName('validateUrls');
 
 $app->get('/urls', function ($request, Response $response) use ($connectionDB, $renderer) {
 
@@ -112,15 +157,22 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
 
 $app->get('/urls/{id}', function ($request, Response $response, array $args) use ($connectionDB, $renderer) {
     $id = $args['id'];
+    // Get flash messages from previous request
+    $flash = $this->get('flash');
+    // Get the first message from a specific key
+    $flashMessage = $flash->getFirstMessage('success');
 
     $extractQuery = "SELECT * FROM urls WHERE id=:id";
     $stmt = $connectionDB->prepare($extractQuery);
     $stmt->bindParam(':id', $id);
     $stmt->execute();
-    [$arrayUrls] = $stmt->fetchAll();
 
-    return $renderer->render($response, 'test.phtml', $arrayUrls);
-})->setName('test');
+    [$params] = $stmt->fetchAll();
+
+    $params['flashMessage'] = $flashMessage;
+
+    return $renderer->render($response, 'test.phtml', $params);
+})->setName('testUrls');
 
 // Run app
 $app->run();
