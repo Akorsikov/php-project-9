@@ -72,7 +72,7 @@ $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 // add DB-connection
-// $databaseUrl = parse_url('postgresql://sites_db_user:vqEoglOCba3yVva54BoB93y1SYMA4q6r@dpg-cq4qdieehbks73bftqkg-a.frankfurt-postgres.render.com/sites_db');
+$databaseUrl = parse_url('postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub@dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx');
 $host = isset($databaseUrl['host']) ? $databaseUrl['host'] : 'localhost';
 $port = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
 $dbname = isset($databaseUrl['path']) ? ltrim($databaseUrl['path'], '/') : 'websites_db';
