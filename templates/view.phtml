@@ -39,7 +39,7 @@
                         <tr>
                             <td><?= $url['id']; ?></td>
                             <td><a href="urls/<?= $url['id']; ?>"><?= $url['name']; ?></a></td>
-                            <td><?= $url['lastCheck']; ?></td>
+                            <td><?= $url['lastCheck'] ?? null; ?></td>
                             <td><?= $url['codeAnswer'] ?? null; ?></td>
                         </tr>
                         <?php endforeach; ?>

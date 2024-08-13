@@ -33,7 +33,7 @@
                             <input
                                 type="text"
                                 name="url_name"
-                                value="<?= $urlName; ?>"
+                                value="<?= $urlName ?? null; ?>"
                                 class="form-control form-control-lg <?= isset($errors) ? 'is-invalid' : '';?>"
                                 placeholder="https://www.example.com"
                             >
