@@ -1,7 +1,7 @@
 
 -- -- Создать БД 'websites_db';
 -- CREATE DATABASE websites_db;
--- create user aleksandr with encrypted password '123456';
+-- CREATE USER aleksandr WITH ENCRYPTED PASSWORD '123456';
 
 -- Удалить таблицу 'urls' если существует
 DROP TABLE IF EXISTS urls CASCADE;

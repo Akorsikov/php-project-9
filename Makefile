@@ -40,3 +40,7 @@ lint-fix:
 
 analyse:
 	vendor/bin/phpstan analyse --level 9 public
+
+migrate:
+	export DATABASE_URL=postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub@dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx
+	psql -a -d $DATABASE_URL -f database.sql
