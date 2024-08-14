@@ -72,11 +72,8 @@ $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 // add DB-connection
-$databaseUrl = parse_url('
-    postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub
-    @dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx
-');
-// $databaseUrl = getenv('DATABASE_URL'); // localhost - работает, render.com - нет
+// $databaseUrl = parse_url('postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub@dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx');
+$databaseUrl = getenv('DATABASE_URL'); // localhost - работает, render.com - нет
 
 $host = isset($databaseUrl['host']) ? $databaseUrl['host'] : 'localhost';
 $port = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
@@ -133,11 +130,11 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
             $flashMessage = 'Страница уже существует';
         }
 
-            // Set flash message for next request
-            $this->get('flash')->addMessage('success', $flashMessage);
-            $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$id"]);
+        // Set flash message for next request
+        $this->get('flash')->addMessage('success', $flashMessage);
+        $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$id"]);
 
-            return $response->withStatus(302)->withHeader('Location', $url);
+        return $response->withStatus(302)->withHeader('Location', $url);
     }
     $errors = $validation->errors();
     $errorMessages = is_bool($errors) ? null : $errors['urlname'];

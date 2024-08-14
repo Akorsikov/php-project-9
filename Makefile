@@ -1,6 +1,7 @@
 PORT ?= 8000
 start:
 	PHP_CLI_SERVER_WORKERS=5 php -S 0.0.0.0:$(PORT) -t public
+	export DATABASE_URL=postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub@dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx
 
 localhost:
 	php -S localhost:8000 -t public public/index.php
