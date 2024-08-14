@@ -72,8 +72,7 @@ $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 // add DB-connection
-// $databaseUrl = parse_url('postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub@dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx');
-$databaseUrl = parse_url(getenv('DATABASE_URL')); // localhost - работает, render.com - нет
+$databaseUrl = parse_url(getenv('DATABASE_URL')); // Обратить внимание наставника
 
 $host = isset($databaseUrl['host']) ? $databaseUrl['host'] : 'localhost';
 $port = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
