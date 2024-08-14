@@ -78,7 +78,7 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $databaseUrl = parse_url($_ENV['DATABASE_URL'] ?? $LOCAL_DATABASE_URL);
 
 $host = $databaseUrl['host'] ?? null;
-$port = $databaseUrl['port'] ?? null;
+$port = $databaseUrl['port'] ?? 5432;
 $dbname = ltrim($databaseUrl['path'] ?? "", '/');
 $user = $databaseUrl['user'] ?? null;
 $password = $databaseUrl['pass'] ?? null;
