@@ -21,9 +21,11 @@ use Valitron\Validator;
 use Slim\Flash\Messages;
 use Slim\Routing\RouteContext;
 
-use function DI\string;
+// use function DI\string;
 
 require __DIR__ . '/../vendor/autoload.php';
+
+$LOCAL_DATABASE_URL = 'postgresql://aleksandr:123456@localhost:5432/websites_db';
 
 $containerBuilder = new ContainerBuilder();
 
@@ -72,13 +74,15 @@ $app->addRoutingMiddleware();
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 // add DB-connection
-$databaseUrl = parse_url(getenv('DATABASE_URL')); // Обратить внимание наставника
+// $databaseUrl = parse_url(getenv('DATABASE_URL')); // Обратить внимание наставника
+$databaseUrl = parse_url($_ENV['DATABASE_URL'] ?? $LOCAL_DATABASE_URL);
 
-$host = isset($databaseUrl['host']) ? $databaseUrl['host'] : 'localhost';
-$port = isset($databaseUrl['port']) ? $databaseUrl['port'] : 5432;
-$dbname = isset($databaseUrl['path']) ? ltrim($databaseUrl['path'], '/') : 'websites_db';
-$user = isset($databaseUrl['user']) ? $databaseUrl['user'] : 'aleksandr';
-$password = isset($databaseUrl['pass']) ? $databaseUrl['pass'] : 123456;
+$host = $databaseUrl['host'] ?? null;
+$port = $databaseUrl['port'] ?? null;
+$dbname = ltrim($databaseUrl['path'] ?? "", '/');
+$user = $databaseUrl['user'] ?? null;
+$password = $databaseUrl['pass'] ?? null;
+
 $conStr = sprintf(
     "pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s",
     $host,
@@ -139,7 +143,8 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
     $errorMessages = is_bool($errors) ? null : $errors['urlname'];
     $params = [
         'urlName' => $urlName,
-        'errors' => $errorMessages
+        'errors' => $errorMessages,
+        'database' => $_ENV['DATABASE_URL']
     ];
 
     return $renderer->render($response, 'main.phtml', $params);
@@ -174,6 +179,13 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
 
     return $renderer->render($response, 'test.phtml', $params);
 })->setName('testUrls');
+
+$app->post(
+    '/urls/{url_id}/checks',
+    function ($request, Response $response, array $args) use ($connectionDB, $renderer) {
+        $url_id = $args['url_id'];
+    }
+)->setName('checkUrls');
 
 // Run app
 $app->run();
