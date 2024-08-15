@@ -25,7 +25,7 @@ use Slim\Routing\RouteContext;
 
 require __DIR__ . '/../vendor/autoload.php';
 
-$LOCAL_DATABASE_URL = 'postgresql://aleksandr:123456@localhost:5432/websites_db';
+$LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
 
 $containerBuilder = new ContainerBuilder();
 
@@ -143,8 +143,7 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
     $errorMessages = is_bool($errors) ? null : $errors['urlname'];
     $params = [
         'urlName' => $urlName,
-        'errors' => $errorMessages,
-        'database' => $_ENV['DATABASE_URL']
+        'errors' => $errorMessages
     ];
 
     return $renderer->render($response, 'main.phtml', $params);
@@ -152,10 +151,18 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
 
 $app->get('/urls', function ($request, Response $response) use ($connectionDB, $renderer) {
 
-    $extractQuery = "SELECT * FROM urls ORDER BY id DESC";
+    // $extractQuery = "SELECT * FROM urls ORDER BY id DESC";
+
+    $extractQuery = "
+        SELECT u.id, name, MAX(uc.created_at) AS last_check
+        FROM urls u
+        INNER JOIN url_checks uc
+        ON u.id = uc.url_id
+        GROUP BY u.id
+        ORDER BY u.created_at DESC
+    ";
     $stmt = $connectionDB->query($extractQuery);
     $arrayUrls = $stmt->fetchAll(); // phpstan ругается: Cannot call method fetchAll() on PDOStatement|false.
-
     $params = ['urls' => $arrayUrls];
 
     return $renderer->render($response, 'view.phtml', $params);
@@ -168,13 +175,32 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
     // Get the first message from a specific key
     $flashMessage = $flash->getFirstMessage('success');
 
-    $extractQuery = "SELECT * FROM urls WHERE id=:id";
-    $stmt = $connectionDB->prepare($extractQuery);
-    $stmt->bindParam(':id', $id);
-    $stmt->execute();
+    // $extractQuery = "SELECT * FROM urls WHERE id=:id";
+    $extractQuery = "
+        SELECT
+            id AS url_id,
+            name,
+            created_at AS url_created_at
+        FROM urls
+        WHERE id = :id
+    ";
+    $stmt1 = $connectionDB->prepare($extractQuery);
+    $stmt1->bindParam(':id', $id);
+    $stmt1->execute();
 
-    [$params] = $stmt->fetchAll();
+    $params = $stmt1->fetch();
 
+    $extractQuery2 = "
+        SELECT id AS check_id, created_at AS check_created_at 
+        FROM url_checks 
+        WHERE url_id=:url_id
+        ORDER BY check_created_at DESC
+    ";
+    $stmt2 = $connectionDB->prepare($extractQuery2);
+    $stmt2->bindParam(':url_id', $id);
+    $stmt2->execute();
+
+    $params['checks'] = $stmt2->fetchAll();
     $params['flashMessage'] = $flashMessage;
 
     return $renderer->render($response, 'test.phtml', $params);
@@ -183,7 +209,42 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
 $app->post(
     '/urls/{url_id}/checks',
     function ($request, Response $response, array $args) use ($connectionDB, $renderer) {
-        $url_id = $args['url_id'];
+        $urlId = $args['url_id'];
+        $insertQuery = "INSERT INTO url_checks (url_id) VALUES (:urlId)";
+        $stmt = $connectionDB->prepare($insertQuery);
+        $stmt->bindParam(':urlId', $urlId);
+        $stmt->execute();
+
+        $id = $urlId;
+        $extractQuery1 = "
+            SELECT id AS url_id, name, created_at AS url_created_at
+            FROM urls
+            WHERE id=:id
+        ";
+        $stmt1 = $connectionDB->prepare($extractQuery1);
+        $stmt1->bindParam(':id', $id);
+        $stmt1->execute();
+        $params = $stmt1->fetch();
+
+        $extractQuery2 = "
+            SELECT id AS check_id, created_at AS check_created_at
+            FROM url_checks
+            WHERE url_id=:url_id
+            ORDER BY check_created_at DESC
+        ";
+        $stmt2 = $connectionDB->prepare($extractQuery2);
+        $stmt2->bindParam(':url_id', $urlId);
+        $stmt2->execute();
+        $params['checks'] = $stmt2->fetchAll();
+
+        // Get flash messages from previous request
+        $flash = $this->get('flash');
+        // Get the first message from a specific key
+        $flashMessage = $flash->getFirstMessage('success');
+        // $params['flashMessage'] = $flashMessage;
+        $params['flashMessage'] = 'Страница успешно проверена';
+
+        return $renderer->render($response, 'test.phtml', $params);
     }
 )->setName('checkUrls');
 

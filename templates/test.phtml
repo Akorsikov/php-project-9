@@ -32,7 +32,7 @@
                     <tbody>
                         <tr>
                             <td>ID</td>
-                            <td><?= $id; ?></td>
+                            <td><?= $url_id; ?></td>
                         </tr>
                         <tr>
                             <td>Имя</td>
@@ -40,13 +40,14 @@
                         </tr>
                         <tr>
                             <td>Дата создания</td>
-                            <td><?= $created_at; ?></td>
+                            <td><?= $url_created_at; ?></td>
                         </tr>
                     </tbody>
                 </table>
+                <p><?= var_dump($params); ?></p>
             </div>
             <h2 class="mt-5 mb-3">Проверки</h2>
-            <form method="post" action="/urls/<?= $id; ?>/checks">
+            <form method="post" action="/urls/<?= $url_id; ?>/checks">
                 <input type="submit" class="btn btn-primary" value="Запустить проверку">
             </form>
             <table class="table table-bordered table-hover" data-test="checks">
@@ -61,7 +62,16 @@
                 </tr>
                 </thead>
                 <tbody>
-                    <!--?php foreach ($checks as $check): ?-->
+                    <?php foreach ($checks as $check) : ?>
+                        <tr>
+                            <td><?= $check['check_id']; ?></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td><?= $check['check_created_at']; ?></td>
+                        </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
