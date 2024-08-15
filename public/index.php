@@ -156,7 +156,7 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
     $extractQuery = "
         SELECT u.id, name, MAX(uc.created_at) AS last_check
         FROM urls u
-        INNER JOIN url_checks uc
+        LEFT JOIN url_checks uc
         ON u.id = uc.url_id
         GROUP BY u.id
         ORDER BY u.created_at DESC
