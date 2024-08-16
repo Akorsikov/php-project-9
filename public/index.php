@@ -20,6 +20,7 @@ use Slim\Views\PhpRenderer;
 use Valitron\Validator;
 use Slim\Flash\Messages;
 use Slim\Routing\RouteContext;
+use GuzzleHttp\Client;
 
 // use function DI\string;
 
@@ -187,7 +188,10 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
     $params = $stmt1->fetch();
 
     $extractQuery2 = "
-        SELECT id AS check_id, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS check_created_at 
+        SELECT
+            id AS check_id,
+            status_code,
+            TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS check_created_at
         FROM url_checks 
         WHERE url_id=:url_id
         ORDER BY check_created_at DESC
@@ -215,11 +219,21 @@ $app->post(
         $stmt1 = $connectionDB->prepare($extractQuery);
         $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
         $stmt1->execute();
-        $urlName = $stmt1->fetch();
+        $extract = $stmt1->fetch();
 
-        $insertQuery = "INSERT INTO url_checks (url_id) VALUES (:urlId)";
+        // Создаем новый экземпляр клиента Guzzle
+        $client = new Client();
+        // Выполняем GET-запрос к API GitHub
+        $response = $client->request('GET', $extract['name']);
+        // Выводим статус-код ответа, заголовок 'content-type' и тело ответа.
+        $statusCode = $response->getStatusCode();
+        // $title = $response->getHeaderLine('content-type');
+        // $body = $response->getBody(); 
+
+        $insertQuery = "INSERT INTO url_checks (url_id, status_code) VALUES (:urlId, :statusCode)";
         $stmt = $connectionDB->prepare($insertQuery);
         $stmt->bindParam(':urlId', $urlId);
+        $stmt->bindParam(':statusCode', $statusCode);
         $stmt->execute();
 
         $flashMessage = 'Страница успешно проверена';
