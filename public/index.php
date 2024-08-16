@@ -172,13 +172,8 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
 
 $app->get('/urls/{id}', function ($request, Response $response, array $args) use ($connectionDB, $renderer) {
     $id = $args['id'];
-    // Get flash messages from previous request
-    $flash = $this->get('flash');
-    // Get the first message from a specific key
-    $flashMessage = $flash->getFirstMessage('success');
 
-    // $extractQuery = "SELECT * FROM urls WHERE id=:id";
-    $extractQuery = "
+    $extractQuery1 = "
         SELECT
             id AS url_id,
             name,
@@ -186,10 +181,9 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
         FROM urls
         WHERE id = :id
     ";
-    $stmt1 = $connectionDB->prepare($extractQuery);
+    $stmt1 = $connectionDB->prepare($extractQuery1);
     $stmt1->bindParam(':id', $id);
     $stmt1->execute();
-
     $params = $stmt1->fetch();
 
     $extractQuery2 = "
@@ -201,8 +195,12 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
     $stmt2 = $connectionDB->prepare($extractQuery2);
     $stmt2->bindParam(':url_id', $id);
     $stmt2->execute();
-
     $params['checks'] = $stmt2->fetchAll();
+
+    // Get flash messages from previous request
+    $flash = $this->get('flash');
+    // Get the first message from a specific key
+    $flashMessage = $flash->getFirstMessage('success');
     $params['flashMessage'] = $flashMessage;
 
     return $renderer->render($response, 'test.phtml', $params);
@@ -212,41 +210,25 @@ $app->post(
     '/urls/{url_id}/checks',
     function ($request, Response $response, array $args) use ($connectionDB, $renderer) {
         $urlId = $args['url_id'];
+
+        $extractQuery = "SELECT name FROM urls WHERE id = :id";
+        $stmt1 = $connectionDB->prepare($extractQuery);
+        $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
+        $stmt1->execute();
+        $urlName = $stmt1->fetch();
+
         $insertQuery = "INSERT INTO url_checks (url_id) VALUES (:urlId)";
         $stmt = $connectionDB->prepare($insertQuery);
         $stmt->bindParam(':urlId', $urlId);
         $stmt->execute();
 
-        $id = $urlId;
-        $extractQuery1 = "
-            SELECT id AS url_id, name, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS url_created_at
-            FROM urls
-            WHERE id=:id
-        ";
-        $stmt1 = $connectionDB->prepare($extractQuery1);
-        $stmt1->bindParam(':id', $id);
-        $stmt1->execute();
-        $params = $stmt1->fetch();
+        $flashMessage = 'Страница успешно проверена';
+        // Set flash message for next request
+        $this->get('flash')->addMessage('success', $flashMessage);
 
-        $extractQuery2 = "
-            SELECT id AS check_id, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS check_created_at
-            FROM url_checks
-            WHERE url_id=:url_id
-            ORDER BY check_created_at DESC
-        ";
-        $stmt2 = $connectionDB->prepare($extractQuery2);
-        $stmt2->bindParam(':url_id', $urlId);
-        $stmt2->execute();
-        $params['checks'] = $stmt2->fetchAll();
+        $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$urlId"]);
 
-        // Get flash messages from previous request
-        $flash = $this->get('flash');
-        // Get the first message from a specific key
-        $flashMessage = $flash->getFirstMessage('success');
-        // $params['flashMessage'] = $flashMessage;
-        $params['flashMessage'] = 'Страница успешно проверена';
-
-        return $renderer->render($response, 'test.phtml', $params);
+        return $response->withStatus(302)->withHeader('Location', $url);
     }
 )->setName('checkUrls');
 
