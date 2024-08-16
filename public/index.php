@@ -154,7 +154,9 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
     // $extractQuery = "SELECT * FROM urls ORDER BY id DESC";
 
     $extractQuery = "
-        SELECT u.id, name, MAX(uc.created_at) AS last_check
+        SELECT
+            u.id, name,
+            TO_CHAR(MAX(uc.created_at), 'YYYY-MM-DD HH24:MI:SS') AS last_check
         FROM urls u
         LEFT JOIN url_checks uc
         ON u.id = uc.url_id
@@ -180,7 +182,7 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
         SELECT
             id AS url_id,
             name,
-            created_at AS url_created_at
+            TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS url_created_at
         FROM urls
         WHERE id = :id
     ";
@@ -191,7 +193,7 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
     $params = $stmt1->fetch();
 
     $extractQuery2 = "
-        SELECT id AS check_id, created_at AS check_created_at 
+        SELECT id AS check_id, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS check_created_at 
         FROM url_checks 
         WHERE url_id=:url_id
         ORDER BY check_created_at DESC
@@ -217,7 +219,7 @@ $app->post(
 
         $id = $urlId;
         $extractQuery1 = "
-            SELECT id AS url_id, name, created_at AS url_created_at
+            SELECT id AS url_id, name, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS url_created_at
             FROM urls
             WHERE id=:id
         ";
@@ -227,7 +229,7 @@ $app->post(
         $params = $stmt1->fetch();
 
         $extractQuery2 = "
-            SELECT id AS check_id, created_at AS check_created_at
+            SELECT id AS check_id, TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS check_created_at
             FROM url_checks
             WHERE url_id=:url_id
             ORDER BY check_created_at DESC
