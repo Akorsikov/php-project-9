@@ -40,7 +40,7 @@
                             <td><?= $url['id']; ?></td>
                             <td><a href="urls/<?= $url['id']; ?>"><?= $url['name']; ?></a></td>
                             <td><?= $url['last_check'] ?? null; ?></td>
-                            <td><?= $url['codeAnswer'] ?? null; ?></td>
+                            <td><?= $url['status_code'] ?? null; ?></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
