@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS urls, url_checks CASCADE;
 CREATE TABLE urls (
     id SERIAL PRIMARY KEY,
     name varchar(255),
-    created_at TIMESTAMP DEFAULT LOCALTIMESTAMP(0)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP(0)
 );
 
 -- Создать таблицу 'url_checks'
@@ -16,5 +16,5 @@ CREATE TABLE url_checks (
     h1 varchar(255),
     title varchar(255),
     description TEXT,
-    created_at TIMESTAMP DEFAULT LOCALTIMESTAMP(0)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP(0)
 );

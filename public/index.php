@@ -27,6 +27,7 @@ use GuzzleHttp\Client;
 require __DIR__ . '/../vendor/autoload.php';
 
 $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
+$TIME_ZONE_NAME = 'MSK';
 
 $containerBuilder = new ContainerBuilder();
 
@@ -101,8 +102,13 @@ $router = $app->getRouteCollector()->getRouteParser();
 // Add renderer
 $renderer = new PhpRenderer(__DIR__ . '/../templates');
 
-$timezoneOffsetMinutes = $_GET['timezone_offset_minutes'];
-$timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes * 60, 1);
+// $timezoneOffsetMinutes = $_GET['timezone_offset_minutes'];
+// $timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes * 60, 1);
+//
+// Warning: Undefined array key "timezone_offset_minutes" in /app/public/index.php on line 104
+// Warning: session_start(): Session cannot be started after headers
+//                           have already been sent in /app/public/index.php on line 51
+
 
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer) {
@@ -152,7 +158,7 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
     return $renderer->render($response, 'main.phtml', $params);
 })->setName('validateUrls');
 
-$app->get('/urls', function ($request, Response $response) use ($connectionDB, $renderer) {
+$app->get('/urls', function ($request, Response $response) use ($connectionDB, $renderer, $TIME_ZONE_NAME) {
 
     // $extractQuery = "SELECT * FROM urls ORDER BY id DESC";
 
@@ -160,7 +166,7 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
         SELECT
             u.id,
             u.name,
-            uc.created_at AT TIME ZONE 'MSK' AS last_check,
+            uc.created_at AT TIME ZONE :timeZoneName AS last_check,
             uc.status_code
         FROM urls u
         LEFT JOIN url_checks uc
@@ -172,7 +178,9 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
             )
         ORDER BY u.created_at DESC
     ";
-    $stmt = $connectionDB->query($extractQuery);
+    $stmt = $connectionDB->prepare($extractQuery);
+    $stmt->bindParam(':timeZoneName', $TIME_ZONE_NAME);
+    $stmt->execute();
     $arrayUrls = $stmt->fetchAll(); // phpstan ругается: Cannot call method fetchAll() on PDOStatement|false.
     $params = ['urls' => $arrayUrls];
 
@@ -181,7 +189,7 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
 
 $app->get(
     '/urls/{id}',
-    function ($request, Response $response, array $args) use ($connectionDB, $renderer, $timeZoneName) {
+    function ($request, Response $response, array $args) use ($connectionDB, $renderer, $TIME_ZONE_NAME) {
         $id = $args['id'];
 
         $extractQuery1 = "
@@ -194,7 +202,7 @@ $app->get(
         ";
         $stmt1 = $connectionDB->prepare($extractQuery1);
         $stmt1->bindParam(':id', $id);
-        $stmt1->bindParam(':timeZoneName', $timeZoneName);
+        $stmt1->bindParam(':timeZoneName', $TIME_ZONE_NAME);
         $stmt1->execute();
         $params = $stmt1->fetch();
 
@@ -209,7 +217,7 @@ $app->get(
         ";
         $stmt2 = $connectionDB->prepare($extractQuery2);
         $stmt2->bindParam(':url_id', $id);
-        $stmt2->bindParam(':timeZoneName', $timeZoneName);
+        $stmt2->bindParam(':timeZoneName', $TIME_ZONE_NAME);
         $stmt2->execute();
         $params['checks'] = $stmt2->fetchAll();
 
@@ -218,6 +226,7 @@ $app->get(
         // Get the first message from a specific key
         $flashMessage = $flash->getFirstMessage('success');
         $params['flashMessage'] = $flashMessage;
+        $params['timeZoneName'] = $TIME_ZONE_NAME;
 
         return $renderer->render($response, 'test.phtml', $params);
     }
@@ -236,7 +245,7 @@ $app->post(
 
         // Создаем новый экземпляр клиента Guzzle
         $client = new Client();
-        // Выполняем GET-запрос 
+        // Выполняем GET-запрос
         $response = $client->request('GET', $extract['name']);
         // Выводим статус-код ответа, заголовок 'content-type' и тело ответа.
         $statusCode = $response->getStatusCode();
