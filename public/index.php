@@ -27,8 +27,6 @@ use GuzzleHttp\Client;
 require __DIR__ . '/../vendor/autoload.php';
 
 $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
-$timezoneOffsetMinutes = $_GET['timezone_offset_minutes'];
-$timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes*60, false);
 
 $containerBuilder = new ContainerBuilder();
 
@@ -103,6 +101,8 @@ $router = $app->getRouteCollector()->getRouteParser();
 // Add renderer
 $renderer = new PhpRenderer(__DIR__ . '/../templates');
 
+$timezoneOffsetMinutes = $_GET['timezone_offset_minutes'];
+$timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes * 60, 0);
 
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer) {
@@ -179,46 +179,49 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
     return $renderer->render($response, 'view.phtml', $params);
 })->setName('viewUrls');
 
-$app->get('/urls/{id}', function ($request, Response $response, array $args) use ($connectionDB, $renderer, $timeZoneName) {
-    $id = $args['id'];
+$app->get(
+    '/urls/{id}',
+    function ($request, Response $response, array $args) use ($connectionDB, $renderer, $timeZoneName) {
+        $id = $args['id'];
 
-    $extractQuery1 = "
-        SELECT
-            id AS url_id,
-            name,
-            created_at AT TIME ZONE :timeZoneName AS url_created_at
-        FROM urls
-        WHERE id = :id
-    ";
-    $stmt1 = $connectionDB->prepare($extractQuery1);
-    $stmt1->bindParam(':id', $id);
-    $stmt1->bindParam(':timeZoneName', $timeZoneName);
-    $stmt1->execute();
-    $params = $stmt1->fetch();
+        $extractQuery1 = "
+            SELECT
+                id AS url_id,
+                name,
+                created_at AT TIME ZONE :timeZoneName AS url_created_at
+            FROM urls
+            WHERE id = :id
+        ";
+        $stmt1 = $connectionDB->prepare($extractQuery1);
+        $stmt1->bindParam(':id', $id);
+        $stmt1->bindParam(':timeZoneName', $timeZoneName);
+        $stmt1->execute();
+        $params = $stmt1->fetch();
 
-    $extractQuery2 = "
-        SELECT
-            id AS check_id,
-            status_code,
-            created_at AT TIME ZONE :timeZoneName AS check_created_at
-        FROM url_checks 
-        WHERE url_id=:url_id
-        ORDER BY check_created_at DESC
-    ";
-    $stmt2 = $connectionDB->prepare($extractQuery2);
-    $stmt2->bindParam(':url_id', $id);
-    $stmt2->bindParam(':timeZoneName', $timeZoneName);
-    $stmt2->execute();
-    $params['checks'] = $stmt2->fetchAll();
+        $extractQuery2 = "
+            SELECT
+                id AS check_id,
+                status_code,
+                created_at AT TIME ZONE :timeZoneName AS check_created_at
+            FROM url_checks 
+            WHERE url_id=:url_id
+            ORDER BY check_created_at DESC
+        ";
+        $stmt2 = $connectionDB->prepare($extractQuery2);
+        $stmt2->bindParam(':url_id', $id);
+        $stmt2->bindParam(':timeZoneName', $timeZoneName);
+        $stmt2->execute();
+        $params['checks'] = $stmt2->fetchAll();
 
-    // Get flash messages from previous request
-    $flash = $this->get('flash');
-    // Get the first message from a specific key
-    $flashMessage = $flash->getFirstMessage('success');
-    $params['flashMessage'] = $flashMessage;
+        // Get flash messages from previous request
+        $flash = $this->get('flash');
+        // Get the first message from a specific key
+        $flashMessage = $flash->getFirstMessage('success');
+        $params['flashMessage'] = $flashMessage;
 
-    return $renderer->render($response, 'test.phtml', $params);
-})->setName('testUrls');
+        return $renderer->render($response, 'test.phtml', $params);
+    }
+)->setName('testUrls');
 
 $app->post(
     '/urls/{url_id}/checks',
@@ -233,12 +236,12 @@ $app->post(
 
         // Создаем новый экземпляр клиента Guzzle
         $client = new Client();
-        // Выполняем GET-запрос к API GitHub
+        // Выполняем GET-запрос 
         $response = $client->request('GET', $extract['name']);
         // Выводим статус-код ответа, заголовок 'content-type' и тело ответа.
         $statusCode = $response->getStatusCode();
         // $title = $response->getHeaderLine('content-type');
-        // $body = $response->getBody(); 
+        // $body = $response->getBody();
 
         $insertQuery = "INSERT INTO url_checks (url_id, status_code) VALUES (:urlId, :statusCode)";
         $stmt = $connectionDB->prepare($insertQuery);
