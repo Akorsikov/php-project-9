@@ -102,7 +102,7 @@ $router = $app->getRouteCollector()->getRouteParser();
 $renderer = new PhpRenderer(__DIR__ . '/../templates');
 
 $timezoneOffsetMinutes = $_GET['timezone_offset_minutes'];
-$timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes * 60, 0);
+$timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes * 60, 1);
 
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer) {
