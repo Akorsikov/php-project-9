@@ -27,6 +27,8 @@ use GuzzleHttp\Client;
 require __DIR__ . '/../vendor/autoload.php';
 
 $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
+$timezoneOffsetMinutes = $_GET['timezone_offset_minutes'];
+$timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes*60, false);
 
 $containerBuilder = new ContainerBuilder();
 
@@ -156,12 +158,18 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
 
     $extractQuery = "
         SELECT
-            u.id, name,
-            TO_CHAR(MAX(uc.created_at), 'YYYY-MM-DD HH24:MI:SS') AS last_check
+            u.id,
+            u.name,
+            uc.created_at AT TIME ZONE 'MSK' AS last_check,
+            uc.status_code
         FROM urls u
         LEFT JOIN url_checks uc
-        ON u.id = uc.url_id
-        GROUP BY u.id
+        ON uc.url_id = u.id
+        WHERE uc.created_at is NULL or uc.created_at IN (
+            select MAX(created_at)
+            from url_checks
+            group by url_id 
+            )
         ORDER BY u.created_at DESC
     ";
     $stmt = $connectionDB->query($extractQuery);
@@ -171,19 +179,20 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
     return $renderer->render($response, 'view.phtml', $params);
 })->setName('viewUrls');
 
-$app->get('/urls/{id}', function ($request, Response $response, array $args) use ($connectionDB, $renderer) {
+$app->get('/urls/{id}', function ($request, Response $response, array $args) use ($connectionDB, $renderer, $timeZoneName) {
     $id = $args['id'];
 
     $extractQuery1 = "
         SELECT
             id AS url_id,
             name,
-            TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS url_created_at
+            created_at AT TIME ZONE :timeZoneName AS url_created_at
         FROM urls
         WHERE id = :id
     ";
     $stmt1 = $connectionDB->prepare($extractQuery1);
     $stmt1->bindParam(':id', $id);
+    $stmt1->bindParam(':timeZoneName', $timeZoneName);
     $stmt1->execute();
     $params = $stmt1->fetch();
 
@@ -191,13 +200,14 @@ $app->get('/urls/{id}', function ($request, Response $response, array $args) use
         SELECT
             id AS check_id,
             status_code,
-            TO_CHAR(created_at, 'YYYY-MM-DD HH24:MI:SS') AS check_created_at
+            created_at AT TIME ZONE :timeZoneName AS check_created_at
         FROM url_checks 
         WHERE url_id=:url_id
         ORDER BY check_created_at DESC
     ";
     $stmt2 = $connectionDB->prepare($extractQuery2);
     $stmt2->bindParam(':url_id', $id);
+    $stmt2->bindParam(':timeZoneName', $timeZoneName);
     $stmt2->execute();
     $params['checks'] = $stmt2->fetchAll();
 
