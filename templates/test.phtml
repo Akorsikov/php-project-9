@@ -22,7 +22,13 @@
         </nav>
     </header>
     <?php if (isset($flashMessage)): ?>
-        <div class="alert alert-success" role="alert"><?= $flashMessage ?></div>
+        <div
+            class="
+                alert
+                alert-<?= $flashMessage === 'Произошла ошибка при проверке, не удалось подключиться' ? 'danger' : 'success';?>"
+            role="alert">
+                <?= $flashMessage ?>
+        </div>
     <?php endif; ?>
     <main class="flex-grow-1">
         <div class="container-lg mt-3">

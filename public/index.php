@@ -226,7 +226,6 @@ $app->get(
         // Get the first message from a specific key
         $flashMessage = $flash->getFirstMessage('success');
         $params['flashMessage'] = $flashMessage;
-        $params['timeZoneName'] = $TIME_ZONE_NAME;
 
         return $renderer->render($response, 'test.phtml', $params);
     }
@@ -234,7 +233,7 @@ $app->get(
 
 $app->post(
     '/urls/{url_id}/checks',
-    function ($request, Response $response, array $args) use ($connectionDB, $renderer) {
+    function ($request, Response $response, array $args) use ($connectionDB) {
         $urlId = $args['url_id'];
 
         $extractQuery = "SELECT name FROM urls WHERE id = :id";
@@ -244,27 +243,30 @@ $app->post(
         $extract = $stmt1->fetch();
 
         // Создаем новый экземпляр клиента Guzzle
-        $client = new Client();
-        // Выполняем GET-запрос
-        $response = $client->request('GET', $extract['name']);
-        // Выводим статус-код ответа, заголовок 'content-type' и тело ответа.
-        $statusCode = $response->getStatusCode();
-        // $title = $response->getHeaderLine('content-type');
-        // $body = $response->getBody();
 
-        $insertQuery = "INSERT INTO url_checks (url_id, status_code) VALUES (:urlId, :statusCode)";
-        $stmt = $connectionDB->prepare($insertQuery);
-        $stmt->bindParam(':urlId', $urlId);
-        $stmt->bindParam(':statusCode', $statusCode);
-        $stmt->execute();
+        try {
+            $client = new Client();
+            // Выполняем GET-запрос
+            $response = $client->request('GET', $extract['name']);
+            // Выводим статус-код ответа, заголовок 'content-type' и тело ответа.
+            $statusCode = $response->getStatusCode();
+            // $title = $response->getHeaderLine('content-type');
+            // $body = $response->getBody();
+            $insertQuery = "INSERT INTO url_checks (url_id, status_code) VALUES (:urlId, :statusCode)";
+            $stmt = $connectionDB->prepare($insertQuery);
+            $stmt->bindParam(':urlId', $urlId);
+            $stmt->bindParam(':statusCode', $statusCode);
+            $stmt->execute();
+            $flashMessage = 'Страница успешно проверена';
+        } catch (GuzzleHttp\Exception\TransferException) {
+            $flashMessage = 'Произошла ошибка при проверке, не удалось подключиться';
+        } finally {
+            // Set flash message for next request
+            $this->get('flash')->addMessage('success', $flashMessage);
+            $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$urlId"]);
 
-        $flashMessage = 'Страница успешно проверена';
-        // Set flash message for next request
-        $this->get('flash')->addMessage('success', $flashMessage);
-
-        $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$urlId"]);
-
-        return $response->withStatus(302)->withHeader('Location', $url);
+            return $response->withStatus(302)->withHeader('Location', $url);
+        }
     }
 )->setName('checkUrls');
 
