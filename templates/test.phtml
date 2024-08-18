@@ -21,13 +21,11 @@
             </ul>
         </nav>
     </header>
-    <?php if (isset($flashMessage)): ?>
+    <?php if (!empty($flashMessages)): ?>
         <div
-            class="
-                alert
-                alert-<?= $flashMessage === 'Произошла ошибка при проверке, не удалось подключиться' ? 'danger' : 'success';?>"
+            class="alert alert-<?= $key = key($flashMessages) ?>"
             role="alert">
-                <?= $flashMessage ?>
+                <?= $flashMessages[$key][0] ?>
         </div>
     <?php endif; ?>
     <main class="flex-grow-1">

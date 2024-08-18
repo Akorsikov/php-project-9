@@ -136,14 +136,14 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
             $stmt1->bindParam(':name', $urlName);
             $stmt1->execute();
             $id = $connectionDB->lastInsertId();
-            $flashMessage = 'Страница успешно добавлена';
+            $messageText = 'Страница успешно добавлена';
         } else {
             $id = is_array($resultQueryDB) ? $resultQueryDB['id'] : null;
-            $flashMessage = 'Страница уже существует';
+            $messageText = 'Страница уже существует';
         }
 
         // Set flash message for next request
-        $this->get('flash')->addMessage('success', $flashMessage);
+        $this->get('flash')->addMessage('success', $messageText);
         $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$id"]);
 
         return $response->withStatus(302)->withHeader('Location', $url);
@@ -159,9 +159,6 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
 })->setName('validateUrls');
 
 $app->get('/urls', function ($request, Response $response) use ($connectionDB, $renderer, $TIME_ZONE_NAME) {
-
-    // $extractQuery = "SELECT * FROM urls ORDER BY id DESC";
-
     $extractQuery = "
         SELECT
             u.id,
@@ -223,9 +220,9 @@ $app->get(
 
         // Get flash messages from previous request
         $flash = $this->get('flash');
-        // Get the first message from a specific key
-        $flashMessage = $flash->getFirstMessage('success');
-        $params['flashMessage'] = $flashMessage;
+        // Get messages from a specific key
+        $flashMessages = $flash->getMessages();
+        $params['flashMessages'] = $flashMessages;
 
         return $renderer->render($response, 'test.phtml', $params);
     }
@@ -257,12 +254,15 @@ $app->post(
             $stmt->bindParam(':urlId', $urlId);
             $stmt->bindParam(':statusCode', $statusCode);
             $stmt->execute();
-            $flashMessage = 'Страница успешно проверена';
+            $messageStatus = 'success';
+            $messageText = 'Страница успешно проверена';
         } catch (GuzzleHttp\Exception\TransferException) {
-            $flashMessage = 'Произошла ошибка при проверке, не удалось подключиться';
-        } finally {
+            $messageStatus = 'danger';
+            $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
+        } finally
+        {
             // Set flash message for next request
-            $this->get('flash')->addMessage('success', $flashMessage);
+            $this->get('flash')->addMessage($messageStatus, $messageText);
             $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$urlId"]);
 
             return $response->withStatus(302)->withHeader('Location', $url);
