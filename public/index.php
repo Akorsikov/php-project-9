@@ -239,9 +239,8 @@ $app->post(
         $stmt1->execute();
         $extract = $stmt1->fetch();
 
-        // Создаем новый экземпляр клиента Guzzle
-
         try {
+            // Создаем новый экземпляр клиента Guzzle
             $client = new Client();
             // Выполняем GET-запрос
             $response = $client->request('GET', $extract['name']);
