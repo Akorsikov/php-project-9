@@ -24,6 +24,7 @@
         "slim/twig-view": "^3.4",
         "vlucas/valitron": "^1.4",
         "php-di/php-di": "^7.0",
-        "guzzlehttp/guzzle": "^7.9"
+        "guzzlehttp/guzzle": "^7.9",
+        "imangazaliev/didom": "^2.0"
     }
 }

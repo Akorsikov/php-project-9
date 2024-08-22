@@ -21,6 +21,9 @@ use Valitron\Validator;
 use Slim\Flash\Messages;
 use Slim\Routing\RouteContext;
 use GuzzleHttp\Client;
+use DiDom\Document;
+use DiDom\Element;
+use DiDom\Encoder;
 
 // use function DI\string;
 
@@ -207,6 +210,9 @@ $app->get(
             SELECT
                 id AS check_id,
                 status_code,
+                h1,
+                title,
+                description,
                 created_at AT TIME ZONE :timeZoneName AS check_created_at
             FROM url_checks 
             WHERE url_id=:url_id
@@ -237,29 +243,40 @@ $app->post(
         $stmt1 = $connectionDB->prepare($extractQuery);
         $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
         $stmt1->execute();
-        $extract = $stmt1->fetch();
+        $urlName = ($stmt1->fetch())['name'];
 
         try {
             // Создаем новый экземпляр клиента Guzzle
             $client = new Client();
             // Выполняем GET-запрос
-            $response = $client->request('GET', $extract['name']);
+            $response = $client->request('GET', $urlName);
             // Выводим статус-код ответа, заголовок 'content-type' и тело ответа.
             $statusCode = $response->getStatusCode();
-            // $title = $response->getHeaderLine('content-type');
-            // $body = $response->getBody();
-            $insertQuery = "INSERT INTO url_checks (url_id, status_code) VALUES (:urlId, :statusCode)";
+            // Создать новый экземпляр Document
+            $document = new Document($urlName, true);
+            // Получить h1, title, description
+            $h1 = $document->first('h1') ? $document->first('h1')->text() : null;
+            $title = $document->first('title')->text();
+            $metaElement = $document->first('meta[name="description"]');
+            $description = $metaElement->attr('content');
+
+            $insertQuery = "
+                INSERT INTO url_checks (url_id, status_code, h1, title, description) 
+                VALUES (:urlId, :statusCode, :h1, :title, :description)
+            ";
             $stmt = $connectionDB->prepare($insertQuery);
             $stmt->bindParam(':urlId', $urlId);
             $stmt->bindParam(':statusCode', $statusCode);
+            $stmt->bindParam(':h1', $h1);
+            $stmt->bindParam(':title', $title);
+            $stmt->bindParam(':description', $description);
             $stmt->execute();
             $messageStatus = 'success';
             $messageText = 'Страница успешно проверена';
         } catch (GuzzleHttp\Exception\TransferException) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
-        } finally
-        {
+        } finally {
             // Set flash message for next request
             $this->get('flash')->addMessage($messageStatus, $messageText);
             $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$urlId"]);
