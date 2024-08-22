@@ -82,6 +82,7 @@ $conStr = sprintf(
 
 $connectionDB = new \PDO($conStr);
 $connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+$connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // Add router
 $router = $app->getRouteCollector()->getRouteParser();
@@ -237,25 +238,36 @@ $app->post(
             // Создать новый экземпляр Document
             $document = new Document($urlName, true);
             // Получить h1, title, description
-            $h1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : null;
-            $title = $document->first('title') ? substr($document->first('title')->text(), 0, 255) : null;
+            $rawH1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : null;
+            $rawTitle = $document->first('title') ? substr($document->first('title')->text(), 0, 255) : null;
             $metaElement = $document->first('meta[name="description"]');
-            $description = $metaElement ? $metaElement->getAttribute('content') : null;
+            $rawDescription = $metaElement ? $metaElement->getAttribute('content') : null;
 
-            $insertQuery = "
-                INSERT INTO url_checks (url_id, status_code, h1, title, description) 
-                VALUES (:urlId, :statusCode, :h1, :title, :description)
-            ";
-            $stmt = $connectionDB->prepare($insertQuery);
-            $stmt->bindParam(':urlId', $urlId);
-            $stmt->bindParam(':statusCode', $statusCode);
-            $stmt->bindParam(':h1', $h1);
-            $stmt->bindParam(':title', $title);
-            $stmt->bindParam(':description', $description);
-            $stmt->execute();
+            $h1 = mb_convert_encoding($rawH1, "UTF-8");
+            $title = mb_convert_encoding($rawTitle, "UTF-8");
+            $description = mb_convert_encoding($rawDescription, "UTF-8");
 
-            $messageStatus = 'success';
-            $messageText = 'Страница успешно проверена';
+            try {
+                $insertQuery = "
+                    INSERT INTO url_checks (url_id, status_code, h1, title, description) 
+                    VALUES (:urlId, :statusCode, :h1, :title, :description)
+                ";
+                $stmt = $connectionDB->prepare($insertQuery);
+                $stmt->bindParam(':urlId', $urlId);
+                $stmt->bindParam(':statusCode', $statusCode);
+                $stmt->bindParam(':h1', $h1);
+                $stmt->bindParam(':title', $title);
+                $stmt->bindParam(':description', $description);
+
+                $stmt->execute();
+                $messageStatus = 'success';
+                $messageText = 'Страница успешно проверена';
+            } catch (PDOException $Exception) {
+                $messageStatus = 'danger';
+                $messageText = 'Произошла ошибка при записи в базу данных';
+                // $messageText = $Exception->getMessage();
+            }
+
         } catch (GuzzleHttp\Exception\TransferException) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
