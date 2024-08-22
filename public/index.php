@@ -105,14 +105,6 @@ $router = $app->getRouteCollector()->getRouteParser();
 // Add renderer
 $renderer = new PhpRenderer(__DIR__ . '/../templates');
 
-// $timezoneOffsetMinutes = $_GET['timezone_offset_minutes'];
-// $timeZoneName = timezone_name_from_abbr("", $timezoneOffsetMinutes * 60, 1);
-//
-// Warning: Undefined array key "timezone_offset_minutes" in /app/public/index.php on line 104
-// Warning: session_start(): Session cannot be started after headers
-//                           have already been sent in /app/public/index.php on line 51
-
-
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer) {
 
@@ -181,7 +173,7 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
     $stmt = $connectionDB->prepare($extractQuery);
     $stmt->bindParam(':timeZoneName', $TIME_ZONE_NAME);
     $stmt->execute();
-    $arrayUrls = $stmt->fetchAll(); // phpstan ругается: Cannot call method fetchAll() on PDOStatement|false.
+    $arrayUrls = $stmt->fetchAll();
     $params = ['urls' => $arrayUrls];
 
     return $renderer->render($response, 'view.phtml', $params);
@@ -204,7 +196,7 @@ $app->get(
         $stmt1->bindParam(':id', $id);
         $stmt1->bindParam(':timeZoneName', $TIME_ZONE_NAME);
         $stmt1->execute();
-        $params = $stmt1->fetch();
+        $param1 = $stmt1->fetch();
 
         $extractQuery2 = "
             SELECT
@@ -222,13 +214,19 @@ $app->get(
         $stmt2->bindParam(':url_id', $id);
         $stmt2->bindParam(':timeZoneName', $TIME_ZONE_NAME);
         $stmt2->execute();
-        $params['checks'] = $stmt2->fetchAll();
+        $param2 = $stmt2->fetchAll();
 
         // Get flash messages from previous request
         $flash = $this->get('flash');
         // Get messages from a specific key
-        $flashMessages = $flash->getMessages();
-        $params['flashMessages'] = $flashMessages;
+        $param3 = $flash->getMessages();
+
+        $params = [
+            'url' => $param1,
+            'checks' => $param2,
+            'flashMessages' => $param3
+        ];
+
 
         return $renderer->render($response, 'check.phtml', $params);
     }
@@ -243,7 +241,8 @@ $app->post(
         $stmt1 = $connectionDB->prepare($extractQuery);
         $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
         $stmt1->execute();
-        $urlName = ($stmt1->fetch())['name'];
+        $result = $stmt1->fetch();
+        $urlName = is_array($result) && array_key_exists('name', $result) ? $result['name'] : null;
 
         try {
             // Создаем новый экземпляр клиента Guzzle
