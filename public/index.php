@@ -1,19 +1,6 @@
 <?php
 
-/**
- * Instantiate App
- *
- * In order for the factory to work you need to ensure you have installed
- * a supported PSR-7 implementation of your choice e.g.: Slim PSR-7 and a supported
- * ServerRequest creator (included with Slim PSR-7)
- */
-
-use Slim\Http\Request;
 use Slim\Http\Response;
-// use Psr\Http\Message\ResponseInterface as Response;     // не знает getParsedBodyParam()
-// use Psr\Http\Message\ServerRequestInterface as Request; // не знает withRedirect()
-use Psr\Http\Message\UriInterface;
-// use Psr\Container\ContainerInterface;
 use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
 use Slim\Views\PhpRenderer;
@@ -22,10 +9,6 @@ use Slim\Flash\Messages;
 use Slim\Routing\RouteContext;
 use GuzzleHttp\Client;
 use DiDom\Document;
-use DiDom\Element;
-use DiDom\Encoder;
-
-// use function DI\string;
 
 require __DIR__ . '/../vendor/autoload.php';
 
