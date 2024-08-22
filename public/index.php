@@ -237,8 +237,8 @@ $app->post(
             // Создать новый экземпляр Document
             $document = new Document($urlName, true);
             // Получить h1, title, description
-            $h1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 31) : null;
-            $title = $document->first('title') ? $document->first('title')->text() : null;
+            $h1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : null;
+            $title = $document->first('title') ? substr($document->first('title')->text(), 0, 25) : null;
             $metaElement = $document->first('meta[name="description"]');
             $description = $metaElement ? $metaElement->getAttribute('content') : null;
 
