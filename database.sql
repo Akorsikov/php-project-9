@@ -13,8 +13,8 @@ CREATE TABLE url_checks (
     id SERIAL PRIMARY KEY,
     url_id integer REFERENCES urls(id) NOT NULL,
     status_code integer,
-    h1 varchar(255),
-    title varchar(255),
+    h1 varchar(31),
+    title varchar(127),
     description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT LOCALTIMESTAMP(0)
 );

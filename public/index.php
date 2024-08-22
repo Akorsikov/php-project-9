@@ -254,10 +254,10 @@ $app->post(
             // Создать новый экземпляр Document
             $document = new Document($urlName, true);
             // Получить h1, title, description
-            $h1 = $document->first('h1') ? $document->first('h1')->text() : null;
-            $title = $document->first('title')->text();
+            $h1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 31) : null;
+            $title = $document->first('title') ? $document->first('title')->text() : null;
             $metaElement = $document->first('meta[name="description"]');
-            $description = $metaElement->attr('content');
+            $description = $metaElement ? $metaElement->getAttribute('content') : null;
 
             $insertQuery = "
                 INSERT INTO url_checks (url_id, status_code, h1, title, description) 
@@ -270,6 +270,7 @@ $app->post(
             $stmt->bindParam(':title', $title);
             $stmt->bindParam(':description', $description);
             $stmt->execute();
+
             $messageStatus = 'success';
             $messageText = 'Страница успешно проверена';
         } catch (GuzzleHttp\Exception\TransferException) {
