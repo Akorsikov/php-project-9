@@ -147,7 +147,7 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
 
         // Set flash message for next request
         $this->get('flash')->addMessage('success', $messageText);
-        $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$id"]);
+        $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$id"]);
 
         return $response->withStatus(302)->withHeader('Location', $url);
     }
@@ -230,9 +230,9 @@ $app->get(
         $flashMessages = $flash->getMessages();
         $params['flashMessages'] = $flashMessages;
 
-        return $renderer->render($response, 'test.phtml', $params);
+        return $renderer->render($response, 'check.phtml', $params);
     }
-)->setName('testUrls');
+)->setName('checkUrls');
 
 $app->post(
     '/urls/{url_id}/checks',
@@ -279,7 +279,7 @@ $app->post(
         } finally {
             // Set flash message for next request
             $this->get('flash')->addMessage($messageStatus, $messageText);
-            $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('testUrls', ['id' => "$urlId"]);
+            $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$urlId"]);
 
             return $response->withStatus(302)->withHeader('Location', $url);
         }
