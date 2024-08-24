@@ -1,65 +1,25 @@
 <?php
 
+// Подключение автозагрузки через composer
+require __DIR__ . '/../vendor/autoload.php';
+
 use Slim\Http\Response;
 use DI\ContainerBuilder;
+use DI\Container;
 use Slim\Factory\AppFactory;
-use Slim\Views\PhpRenderer;
-use Valitron\Validator;
 use Slim\Flash\Messages;
 use Slim\Routing\RouteContext;
+use Slim\Views\PhpRenderer;
+use Slim\Middleware\MethodOverrideMiddleware;
+use Valitron\Validator;
 use GuzzleHttp\Client;
 use DiDom\Document;
 
-require __DIR__ . '/../vendor/autoload.php';
+// Старт PHP сессии
+session_start();
 
 $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
 $TIME_ZONE_NAME = 'MSK';
-
-$containerBuilder = new ContainerBuilder();
-
-$containerBuilder->addDefinitions(
-    [
-        'flash' => function () {
-            $storage = [];
-            return new Messages($storage);
-        }
-    ]
-);
-
-AppFactory::setContainer($containerBuilder->build());
-
-$app = AppFactory::create();
-
-// Add session start middleware
-$app->add(
-    function ($request, $next) {
-        // Start PHP session
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            session_start();
-        }
-
-        // Change flash message storage
-        $this->get('flash')->__construct($_SESSION);
-
-        return $next->handle($request);
-    }
-);
-
-// Add Routing Middleware
-$app->addRoutingMiddleware();
-
-/**
- * Add Error Handling Middleware
- *
- * @param bool $displayErrorDetails -> Should be set to false in production
- * @param bool $logErrors -> Parameter is passed to the default ErrorHandler
- * @param bool $logErrorDetails -> Display error details in error log
- * which can be replaced by a callable of your choice.
-
- * Note: This middleware should be added last. It will not handle any exceptions/errors
- * for middleware added after it.
- */
-$errorMiddleware = $app->addErrorMiddleware(true, true, true);
 
 // add DB-connection
 // $databaseUrl = parse_url(getenv('DATABASE_URL')); // Обратить внимание наставника
@@ -80,14 +40,30 @@ $conStr = sprintf(
     $password
 );
 
-$connectionDB = new \PDO($conStr);
-$connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+$container = new Container();
+
+$container->set('renderer', function () {
+    // Параметром передается базовая директория, в которой будут храниться шаблоны
+    return new PhpRenderer(__DIR__ . '/../templates');
+});
+
+$container->set('flash', function () {
+    return new Messages();
+});
+
+$connectionDB = new PDO($conStr);
+$connectionDB->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
 $connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+$app = AppFactory::createFromContainer($container);
 
 // Add router
 $router = $app->getRouteCollector()->getRouteParser();
 // Add renderer
 $renderer = new PhpRenderer(__DIR__ . '/../templates');
+
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+$app->add(MethodOverrideMiddleware::class);
 
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer) {
@@ -238,14 +214,20 @@ $app->post(
             // Создать новый экземпляр Document
             $document = new Document($urlName, true);
             // Получить h1, title, description
-            $rawH1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : null;
-            $rawTitle = $document->first('title') ? substr($document->first('title')->text(), 0, 255) : null;
+            $rawH1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : '';
+            $rawTitle = $document->first('title') ? substr($document->first('title')->text(), 0, 255) : '';
             $metaElement = $document->first('meta[name="description"]');
-            $rawDescription = $metaElement ? $metaElement->getAttribute('content') : null;
+            $rawDescription = $metaElement ? $metaElement->getAttribute('content') : '';
 
-            $h1 = mb_convert_encoding($rawH1, "UTF-8");
-            $title = mb_convert_encoding($rawTitle, "UTF-8");
-            $description = mb_convert_encoding($rawDescription, "UTF-8");
+            if (!empty($rawH1)) {
+                $h1 = mb_convert_encoding($rawH1, "UTF-8");
+            }
+            if (!empty($metaElement)) {
+                $title = mb_convert_encoding($rawTitle, "UTF-8");
+            }
+            if (!empty($rawDescription)) {
+                $description = mb_convert_encoding($rawDescription, "UTF-8");
+            }
 
             try {
                 $insertQuery = "
@@ -267,7 +249,6 @@ $app->post(
                 $messageText = 'Произошла ошибка при записи в базу данных';
                 // $messageText = $Exception->getMessage();
             }
-
         } catch (GuzzleHttp\Exception\TransferException) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
