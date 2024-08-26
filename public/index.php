@@ -69,7 +69,7 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 
 // Define app routes
-$app->get('/', function ($request, Response $response) use ($renderer, $dataTest) {
+$app->get('/', function ($request, Response $response) use ($renderer) {
     $params = ['choice' => 'main'];
 
     return $renderer->render($response, 'main.phtml', $params);
