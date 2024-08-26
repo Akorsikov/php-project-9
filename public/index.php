@@ -21,7 +21,7 @@ session_start();
 // $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
 $TIME_ZONE_NAME = 'MSK';
 
-Dotenv::createImmutable(__DIR__ . '/../')->load();
+Dotenv::createUnsafeImmutable(__DIR__ . '/../')->load();
 
 // add DB-connection
 
