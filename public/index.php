@@ -13,20 +13,23 @@ use Slim\Middleware\MethodOverrideMiddleware;
 use Valitron\Validator;
 use GuzzleHttp\Client;
 use DiDom\Document;
+use Dotenv\Dotenv;
 
 // Старт PHP сессии
 session_start();
 
-$LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
+// $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
 $TIME_ZONE_NAME = 'MSK';
 
+Dotenv::createImmutable(__DIR__ . '/../')->load();
+
 // add DB-connection
-// $databaseUrl = parse_url(getenv('DATABASE_URL')); // Обратить внимание наставника
-$databaseUrl = parse_url($_ENV['DATABASE_URL'] ?? $LOCAL_DATABASE_URL);
+
+$databaseUrl = parse_url($_ENV['DATABASE_URL']);
 
 $host = $databaseUrl['host'] ?? null;
-$port = $databaseUrl['port'] ?? 5432;
-$dbname = ltrim($databaseUrl['path'] ?? "", '/');
+$port = $databaseUrl['port'] ?? null;
+$dbname = ltrim($databaseUrl['path'] ?? '', '/');
 $user = $databaseUrl['user'] ?? null;
 $password = $databaseUrl['pass'] ?? null;
 
@@ -39,6 +42,10 @@ $conStr = sprintf(
     $password
 );
 
+$connectionDB = new PDO($conStr);
+$connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+$connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 $container = new Container();
 
 $container->set('renderer', function () {
@@ -49,10 +56,6 @@ $container->set('renderer', function () {
 $container->set('flash', function () {
     return new Messages();
 });
-
-$connectionDB = new PDO($conStr);
-$connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-$connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $app = AppFactory::createFromContainer($container);
 
@@ -65,8 +68,8 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 
 // Define app routes
-$app->get('/', function ($request, Response $response) use ($renderer) {
-    $params = ['choice' => 'main'];
+$app->get('/', function ($request, Response $response) use ($renderer, $databaseUrl) {
+    $params = ['choice' => 'main', 'DB_URL' => $databaseUrl];
 
     return $renderer->render($response, 'main.phtml', $params);
 })->setName('main');
