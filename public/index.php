@@ -66,8 +66,9 @@ $app->add(MethodOverrideMiddleware::class);
 
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer) {
+    $params = ['choice' => 'main'];
 
-    return $renderer->render($response, 'main.phtml');
+    return $renderer->render($response, 'main.phtml', $params);
 })->setName('main');
 
 $app->post('/urls', function ($request, Response $response) use ($connectionDB, $renderer) {
@@ -106,7 +107,8 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
     $errorMessages = is_bool($errors) ? null : $errors['urlname'];
     $params = [
         'urlName' => $urlName,
-        'errors' => $errorMessages
+        'errors' => $errorMessages,
+        'choice' => 'main'
     ];
 
     return $renderer->render($response, 'main.phtml', $params);
@@ -133,7 +135,7 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
     $stmt->bindParam(':timeZoneName', $TIME_ZONE_NAME);
     $stmt->execute();
     $arrayUrls = $stmt->fetchAll();
-    $params = ['urls' => $arrayUrls];
+    $params = ['urls' => $arrayUrls, 'choice' => 'view'];
 
     return $renderer->render($response, 'view.phtml', $params);
 })->setName('viewUrls');
