@@ -4,7 +4,7 @@ start:
 	export DATABASE_URL=postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub@dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx
 
 localhost:
-	php -S localhost:8000 -t public public/index.php
+	php -S localhost:8080 -t public public/index.php
 
 setup:
 	composer install
