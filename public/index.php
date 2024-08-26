@@ -25,13 +25,11 @@ if (empty($_ENV['DATABASE_URL'])) {
     Dotenv::createImmutable(__DIR__ . '/../')->load();
 }
 
-$dataTest = $_ENV;
-
 // add DB-connection
 $databaseUrl = parse_url($_ENV['DATABASE_URL']);
 
 $host = $databaseUrl['host'] ?? null;
-$port = $databaseUrl['port'] ?? null;
+$port = $databaseUrl['port'] ?? 5432;
 $dbname = ltrim($databaseUrl['path'] ?? '', '/');
 $user = $databaseUrl['user'] ?? null;
 $password = $databaseUrl['pass'] ?? null;
@@ -72,7 +70,7 @@ $app->add(MethodOverrideMiddleware::class);
 
 // Define app routes
 $app->get('/', function ($request, Response $response) use ($renderer, $dataTest) {
-    $params = ['choice' => 'main', 'dataTest' => $dataTest];
+    $params = ['choice' => 'main'];
 
     return $renderer->render($response, 'main.phtml', $params);
 })->setName('main');
