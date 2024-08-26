@@ -4,7 +4,6 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Http\Response;
-use DI\ContainerBuilder;
 use DI\Container;
 use Slim\Factory\AppFactory;
 use Slim\Flash\Messages;
@@ -52,7 +51,7 @@ $container->set('flash', function () {
 });
 
 $connectionDB = new PDO($conStr);
-$connectionDB->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+$connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 $connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $app = AppFactory::createFromContainer($container);
