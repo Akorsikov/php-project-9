@@ -18,13 +18,16 @@ use Dotenv\Dotenv;
 // Старт PHP сессии
 session_start();
 
-// $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
 $TIME_ZONE_NAME = 'MSK';
 
-Dotenv::createUnsafeImmutable(__DIR__ . '/../')->load();
+// $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
+if (empty($_ENV['DATABASE_URL'])) {
+    Dotenv::createImmutable(__DIR__ . '/../')->load();
+}
+
+$dataTest = $_ENV;
 
 // add DB-connection
-
 $databaseUrl = parse_url($_ENV['DATABASE_URL']);
 
 $host = $databaseUrl['host'] ?? null;
@@ -68,8 +71,8 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 
 // Define app routes
-$app->get('/', function ($request, Response $response) use ($renderer, $databaseUrl) {
-    $params = ['choice' => 'main', 'DB_URL' => $databaseUrl];
+$app->get('/', function ($request, Response $response) use ($renderer, $dataTest) {
+    $params = ['choice' => 'main', 'dataTest' => $dataTest];
 
     return $renderer->render($response, 'main.phtml', $params);
 })->setName('main');
