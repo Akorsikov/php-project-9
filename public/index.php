@@ -76,7 +76,8 @@ $app->get('/', function ($request, Response $response) use ($renderer) {
 })->setName('main');
 
 $app->post('/urls', function ($request, Response $response) use ($connectionDB, $renderer) {
-    $urlName = $request->getParsedBodyParam('url_name');
+    $url = $request->getParsedBodyParam('url');
+    $urlName = $url['name'];
 
     $rules = ['required', 'url', ['lengthMax', 255]];
     $validation = new Validator(['urlname' => $urlName]);
