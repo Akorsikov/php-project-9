@@ -116,7 +116,7 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
         'choice' => 'main'
     ];
 
-    return $renderer->render($response, 'main.phtml', $params);
+    return $renderer->render($response->withStatus(422), 'main.phtml', $params);
 })->setName('validateUrls');
 
 $app->get('/urls', function ($request, Response $response) use ($connectionDB, $renderer, $TIME_ZONE_NAME) {
