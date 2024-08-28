@@ -13,6 +13,7 @@ use Slim\Middleware\MethodOverrideMiddleware;
 use Valitron\Validator;
 use GuzzleHttp\Client;
 use DiDom\Document;
+use DiDom\Exceptions\InvalidSelectorException;
 use Dotenv\Dotenv;
 
 // Старт PHP сессии
@@ -250,16 +251,17 @@ $app->post(
             $stmt->execute();
             $messageStatus = 'success';
             $messageText = 'Страница успешно проверена';
+            $this->get('flash')->addMessage($messageStatus, $messageText);
         } catch (GuzzleHttp\Exception\TransferException) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
+            $this->get('flash')->addMessage($messageStatus, $messageText);
         } catch (PDOException $Exception) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при записи в базу данных';
+            $this->get('flash')->addMessage($messageStatus, $messageText);
             // $messageText = $Exception->getMessage();
         } finally {
-            // Set flash message for next request
-            $this->get('flash')->addMessage($messageStatus, $messageText);
             $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$urlId"]);
 
             return $response->withStatus(302)->withHeader('Location', $url);
