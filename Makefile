@@ -41,9 +41,3 @@ lint-fix:
 
 analyse:
 	vendor/bin/phpstan analyse --level 9 public
-
-prepare-web-db:
-	psql -a -d postgresql://aleksandr:3gvKxDJVPojbmXqJVwmo3lAMZRkZsFub@dpg-cqr2d01fecgc738i21u0-a.frankfurt-postgres.render.com/websites_db_trjx -f database.sql
-
-prepare-localhost-db:
-	psql -a -d postgresql://postgres:123456@localhost:5432/websites_db -f database.sql	
