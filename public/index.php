@@ -234,15 +234,10 @@ $app->post(
             $metaElement = $document->first('meta[name="description"]');
             $rawDescription = $metaElement ? $metaElement->getAttribute('content') : '';
 
-            if (!empty($rawH1)) {
-                $h1 = mb_convert_encoding($rawH1, "UTF-8");
-            }
-            if (!empty($metaElement)) {
-                $title = mb_convert_encoding($rawTitle, "UTF-8");
-            }
-            if (!empty($rawDescription)) {
-                $description = mb_convert_encoding($rawDescription, "UTF-8");
-            }
+            $h1 = empty($rawH1) ? '' : mb_convert_encoding($rawH1, "UTF-8");
+            $title = empty($metaElement) ? '' : mb_convert_encoding($rawTitle, "UTF-8");
+            $description = empty($rawDescription) ? '' : mb_convert_encoding($rawDescription, "UTF-8");
+
             $insertQuery = "
                 INSERT INTO url_checks (url_id, status_code, h1, title, description) 
                 VALUES (:urlId, :statusCode, :h1, :title, :description)
