@@ -64,19 +64,18 @@ $app = AppFactory::createFromContainer($container);
 // Add router
 $router = $app->getRouteCollector()->getRouteParser();
 // Add renderer
-$renderer = new PhpRenderer(__DIR__ . '/../templates');
 
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 
 // Define app routes
-$app->get('/', function ($request, Response $response) use ($renderer) {
+$app->get('/', function ($request, Response $response) {
     $params = ['choice' => 'main'];
 
-    return $renderer->render($response, 'main.phtml', $params);
+    return $this->get('renderer')->render($response, 'main.phtml', $params);
 })->setName('main');
 
-$app->post('/urls', function ($request, Response $response) use ($connectionDB, $renderer) {
+$app->post('/urls', function ($request, Response $response) use ($connectionDB) {
     $url = $request->getParsedBodyParam('url');
     $urlName = $url['name'];
 
@@ -117,10 +116,10 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB, 
         'choice' => 'main'
     ];
 
-    return $renderer->render($response->withStatus(422), 'main.phtml', $params);
+    return $this->get('renderer')->render($response->withStatus(422), 'main.phtml', $params);
 })->setName('validateUrls');
 
-$app->get('/urls', function ($request, Response $response) use ($connectionDB, $renderer, $TIME_ZONE_NAME) {
+$app->get('/urls', function ($request, Response $response) use ($connectionDB, $TIME_ZONE_NAME) {
     $extractQuery = "
         SELECT
             u.id,
@@ -143,12 +142,12 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
     $arrayUrls = $stmt->fetchAll();
     $params = ['urls' => $arrayUrls, 'choice' => 'view'];
 
-    return $renderer->render($response, 'view.phtml', $params);
+    return $this->get('renderer')->render($response, 'view.phtml', $params);
 })->setName('viewUrls');
 
 $app->get(
     '/urls/{id}',
-    function ($request, Response $response, array $args) use ($connectionDB, $renderer, $TIME_ZONE_NAME) {
+    function ($request, Response $response, array $args) use ($connectionDB, $TIME_ZONE_NAME) {
         $id = $args['id'];
 
         $extractQuery1 = "
@@ -195,7 +194,7 @@ $app->get(
         ];
 
 
-        return $renderer->render($response, 'check.phtml', $params);
+        return $this->get('renderer')->render($response, 'check.phtml', $params);
     }
 )->setName('checkUrls');
 
