@@ -13,7 +13,6 @@ use Slim\Middleware\MethodOverrideMiddleware;
 use Valitron\Validator;
 use GuzzleHttp\Client;
 use DiDom\Document;
-use DiDom\Exceptions\InvalidSelectorException;
 use Dotenv\Dotenv;
 
 // Старт PHP сессии
@@ -21,7 +20,6 @@ session_start();
 
 $timeZoneName = 'MSK';
 
-// $LOCAL_DATABASE_URL = 'postgresql://postgres:123456@localhost:5432/websites_db';
 if (empty($_ENV['DATABASE_URL'])) {
     Dotenv::createImmutable(__DIR__ . '/../')->load();
 }
@@ -218,22 +216,19 @@ $app->post(
         $urlName = is_array($result) && array_key_exists('name', $result) ? $result['name'] : null;
 
         try {
-            // Создаем новый экземпляр клиента Guzzle
+            // create new client Guzzle
             $client = new Client();
-            // Выполняем GET-запрос
+            // run GET-request
             $response = $client->request('GET', $urlName);
-            // Выводим статус-код ответа, заголовок 'content-type' и тело ответа.
             $statusCode = $response->getStatusCode();
-            // Создать новый экземпляр Document
+            // create new HTML-document
             $document = new Document($urlName, true);
-            // Получить h1, title, description
-            // @phpstan-ignore-next-line
+            // get raw h1, title, description
             $rawH1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : '';
-            // @phpstan-ignore-next-line
             $rawTitle = $document->first('title') ? substr($document->first('title')->text(), 0, 255) : '';
             $metaElement = $document->first('meta[name="description"]');
             $rawDescription = $metaElement ? $metaElement->getAttribute('content') : '';
-
+            //get h1, title, description
             $h1 = empty($rawH1) ? '' : mb_convert_encoding($rawH1, "UTF-8");
             $title = empty($metaElement) ? '' : mb_convert_encoding($rawTitle, "UTF-8");
             $description = empty($rawDescription) ? '' : mb_convert_encoding($rawDescription, "UTF-8");
@@ -261,7 +256,6 @@ $app->post(
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при записи в базу данных';
             $this->get('flash')->addMessage($messageStatus, $messageText);
-            // $messageText = $Exception->getMessage();
         } finally {
             $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$urlId"]);
 
