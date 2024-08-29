@@ -31,10 +31,10 @@ valid:
 	composer validate	
 
 lint:
-	composer exec --verbose phpcs -- --standard=PSR12 --colors public
+	composer exec --verbose phpcs -- --standard=PSR12 --colors public src
 
 lint-fix:
-	composer exec --verbose phpcbf -- --standard=PSR12 --colors public
+	composer exec --verbose phpcbf -- --standard=PSR12 --colors public src
 
 analyse:
-	vendor/bin/phpstan analyse --level 9 public
+	vendor/bin/phpstan analyse --level 9 public src
