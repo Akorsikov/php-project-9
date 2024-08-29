@@ -14,6 +14,7 @@ use Valitron\Validator;
 use GuzzleHttp\Client;
 use DiDom\Document;
 use Dotenv\Dotenv;
+use Php\Project\Connection;
 
 // Старт PHP сессии
 session_start();
@@ -25,30 +26,13 @@ if (empty($_ENV['DATABASE_URL'])) {
 }
 
 // add DB-connection
-$databaseUrl = parse_url($_ENV['DATABASE_URL']);
 
-$host = $databaseUrl['host'] ?? null;
-$port = $databaseUrl['port'] ?? 5432;
-$dbname = ltrim($databaseUrl['path'] ?? '', '/');
-$user = $databaseUrl['user'] ?? null;
-$password = $databaseUrl['pass'] ?? null;
-
-$conStr = sprintf(
-    "pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s",
-    $host,
-    $port,
-    $dbname,
-    $user,
-    $password
-);
 
 $container = new Container();
 
 $container->set('connectionDB', function () use ($conStr) {
-    $connectionDB = new PDO($conStr);
-    $connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    $connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    return $connectionDB;
+    // ОШИБКА НА СТРОКЕ НИЖЕ
+    return new Connection($_ENV['DATABASE_URL']);
 });
 
 $container->set('renderer', function () {

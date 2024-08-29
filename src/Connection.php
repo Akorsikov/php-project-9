@@ -6,7 +6,7 @@ class Connection
 {
     private \PDO $connectionDB;
 
-    public function __construct(string $environmentVar)
+    public function __construct($environmentVar)
     {
         $databaseUrl = parse_url($environmentVar);
 
@@ -28,5 +28,9 @@ class Connection
         $this->connectionDB = new \PDO($connectString);
         $this->connectionDB->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
         $this->connectionDB->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    }
+
+    public function get() {
+        return $this->connectionDB;
     }
 }
