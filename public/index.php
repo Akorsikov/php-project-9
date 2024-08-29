@@ -42,10 +42,6 @@ $conStr = sprintf(
     $password
 );
 
-// $connectionDB = new PDO($conStr);
-// $connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-// $connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
 $container = new Container();
 
 $container->set('connectionDB', function () use ($conStr) {
