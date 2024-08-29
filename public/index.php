@@ -44,11 +44,18 @@ $conStr = sprintf(
     $password
 );
 
-$connectionDB = new PDO($conStr);
-$connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-$connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// $connectionDB = new PDO($conStr);
+// $connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+// $connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $container = new Container();
+
+$container->set('connectionDB', function () use ($conStr) {
+    $connectionDB = new PDO($conStr);
+    $connectionDB->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $connectionDB->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    return $connectionDB;
+});
 
 $container->set('renderer', function () {
     // Параметром передается базовая директория, в которой будут храниться шаблоны
@@ -75,7 +82,7 @@ $app->get('/', function ($request, Response $response) {
     return $this->get('renderer')->render($response, 'main.phtml', $params);
 })->setName('main');
 
-$app->post('/urls', function ($request, Response $response) use ($connectionDB) {
+$app->post('/urls', function ($request, Response $response) {
     $url = $request->getParsedBodyParam('url');
     $urlName = $url['name'];
 
@@ -85,17 +92,17 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB) 
 
     if ($validation->validate()) {
         $extractQuery = "SELECT id FROM urls WHERE name=:urlname";
-        $stmt = $connectionDB->prepare($extractQuery);
+        $stmt = $this->get('connectionDB')->prepare($extractQuery);
         $stmt->bindParam(':urlname', $urlName);
         $stmt->execute();
         $resultQueryDB = $stmt->fetch();
 
         if (empty($resultQueryDB)) {
             $insertQuery = "INSERT INTO urls (name) VALUES (:name)";
-            $stmt1 = $connectionDB->prepare($insertQuery);
+            $stmt1 = $this->get('connectionDB')->prepare($insertQuery);
             $stmt1->bindParam(':name', $urlName);
             $stmt1->execute();
-            $id = $connectionDB->lastInsertId();
+            $id = $this->get('connectionDB')->lastInsertId();
             $messageText = 'Страница успешно добавлена';
         } else {
             $id = is_array($resultQueryDB) ? $resultQueryDB['id'] : null;
@@ -119,7 +126,7 @@ $app->post('/urls', function ($request, Response $response) use ($connectionDB) 
     return $this->get('renderer')->render($response->withStatus(422), 'main.phtml', $params);
 })->setName('validateUrls');
 
-$app->get('/urls', function ($request, Response $response) use ($connectionDB, $TIME_ZONE_NAME) {
+$app->get('/urls', function ($request, Response $response) use ($TIME_ZONE_NAME) {
     $extractQuery = "
         SELECT
             u.id,
@@ -136,7 +143,7 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
             )
         ORDER BY u.created_at DESC
     ";
-    $stmt = $connectionDB->prepare($extractQuery);
+    $stmt = $this->get('connectionDB')->prepare($extractQuery);
     $stmt->bindParam(':timeZoneName', $TIME_ZONE_NAME);
     $stmt->execute();
     $arrayUrls = $stmt->fetchAll();
@@ -147,7 +154,7 @@ $app->get('/urls', function ($request, Response $response) use ($connectionDB, $
 
 $app->get(
     '/urls/{id}',
-    function ($request, Response $response, array $args) use ($connectionDB, $TIME_ZONE_NAME) {
+    function ($request, Response $response, array $args) use ($TIME_ZONE_NAME) {
         $id = $args['id'];
 
         $extractQuery1 = "
@@ -158,7 +165,7 @@ $app->get(
             FROM urls
             WHERE id = :id
         ";
-        $stmt1 = $connectionDB->prepare($extractQuery1);
+        $stmt1 = $this->get('connectionDB')->prepare($extractQuery1);
         $stmt1->bindParam(':id', $id);
         $stmt1->bindParam(':timeZoneName', $TIME_ZONE_NAME);
         $stmt1->execute();
@@ -176,7 +183,7 @@ $app->get(
             WHERE url_id=:url_id
             ORDER BY check_created_at DESC
         ";
-        $stmt2 = $connectionDB->prepare($extractQuery2);
+        $stmt2 = $this->get('connectionDB')->prepare($extractQuery2);
         $stmt2->bindParam(':url_id', $id);
         $stmt2->bindParam(':timeZoneName', $TIME_ZONE_NAME);
         $stmt2->execute();
@@ -200,11 +207,11 @@ $app->get(
 
 $app->post(
     '/urls/{url_id}/checks',
-    function ($request, Response $response, array $args) use ($connectionDB) {
+    function ($request, Response $response, array $args) {
         $urlId = $args['url_id'];
 
         $extractQuery = "SELECT name FROM urls WHERE id = :id";
-        $stmt1 = $connectionDB->prepare($extractQuery);
+        $stmt1 = $this->get('connectionDB')->prepare($extractQuery);
         $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
         $stmt1->execute();
         $result = $stmt1->fetch();
@@ -240,7 +247,7 @@ $app->post(
                 INSERT INTO url_checks (url_id, status_code, h1, title, description) 
                 VALUES (:urlId, :statusCode, :h1, :title, :description)
             ";
-            $stmt = $connectionDB->prepare($insertQuery);
+            $stmt = $this->get('connectionDB')->prepare($insertQuery);
             $stmt->bindParam(':urlId', $urlId);
             $stmt->bindParam(':statusCode', $statusCode);
             $stmt->bindParam(':h1', $h1);
