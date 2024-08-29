@@ -165,6 +165,10 @@ $app->get(
         $stmt1->execute();
         $param1 = $stmt1->fetch();
 
+        if (empty($param1)) {
+            return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
+        }
+
         $extractQuery2 = "
             SELECT
                 id AS check_id,
