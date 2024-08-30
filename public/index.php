@@ -121,7 +121,7 @@ $app->get('/urls', function ($request, Response $response) use ($timeZoneName) {
             )
         ORDER BY u.created_at DESC
     ";
-    $stmt = $this->get('connectionDB')->prepare($extractQuery);
+    $stmt = $this->get('connectionDB')->get()->prepare($extractQuery);
     $stmt->bindParam(':timeZoneName', $timeZoneName);
     $stmt->execute();
     $arrayUrls = $stmt->fetchAll();
@@ -143,7 +143,7 @@ $app->get(
             FROM urls
             WHERE id = :id
         ";
-        $stmt1 = $this->get('connectionDB')->prepare($extractQuery1);
+        $stmt1 = $this->get('connectionDB')->get()->prepare($extractQuery1);
         $stmt1->bindParam(':id', $id);
         $stmt1->bindParam(':timeZoneName', $timeZoneName);
         $stmt1->execute();
@@ -161,7 +161,7 @@ $app->get(
             WHERE url_id=:url_id
             ORDER BY check_created_at DESC
         ";
-        $stmt2 = $this->get('connectionDB')->prepare($extractQuery2);
+        $stmt2 = $this->get('connectionDB')->get()->prepare($extractQuery2);
         $stmt2->bindParam(':url_id', $id);
         $stmt2->bindParam(':timeZoneName', $timeZoneName);
         $stmt2->execute();
@@ -189,7 +189,7 @@ $app->post(
         $urlId = $args['url_id'];
 
         $extractQuery = "SELECT name FROM urls WHERE id = :id";
-        $stmt1 = $this->get('connectionDB')->prepare($extractQuery);
+        $stmt1 = $this->get('connectionDB')->get()->prepare($extractQuery);
         $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
         $stmt1->execute();
         $result = $stmt1->fetch();
@@ -217,7 +217,7 @@ $app->post(
                 INSERT INTO url_checks (url_id, status_code, h1, title, description) 
                 VALUES (:urlId, :statusCode, :h1, :title, :description)
             ";
-            $stmt = $this->get('connectionDB')->prepare($insertQuery);
+            $stmt = $this->get('connectionDB')->get()->prepare($insertQuery);
             $stmt->bindParam(':urlId', $urlId);
             $stmt->bindParam(':statusCode', $statusCode);
             $stmt->bindParam(':h1', $h1);
