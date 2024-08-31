@@ -1,6 +1,5 @@
 <?php
 
-// Подключение автозагрузки через composer
 require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Http\Response;
@@ -16,7 +15,6 @@ use DiDom\Document;
 use Dotenv\Dotenv;
 use Php\Project\Connection;
 
-// Старт PHP сессии
 session_start();
 
 $timeZoneName = 'MSK';
@@ -25,18 +23,13 @@ if (empty($_ENV['DATABASE_URL'])) {
     Dotenv::createImmutable(__DIR__ . '/../')->load();
 }
 
-// add DB-connection
-
-
 $container = new Container();
 
-$container->set('connectionDB', function () use ($conStr) {
-    // ОШИБКА НА СТРОКЕ НИЖЕ
+$container->set('connectionDB', function () {
     return new Connection($_ENV['DATABASE_URL']);
 });
 
 $container->set('renderer', function () {
-    // Параметром передается базовая директория, в которой будут храниться шаблоны
     return new PhpRenderer(__DIR__ . '/../templates');
 });
 
@@ -46,14 +39,11 @@ $container->set('flash', function () {
 
 $app = AppFactory::createFromContainer($container);
 
-// Add router
 $router = $app->getRouteCollector()->getRouteParser();
-// Add renderer
 
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 
-// Define app routes
 $app->get('/', function ($request, Response $response) {
     $params = ['choice' => 'main'];
 
@@ -70,24 +60,23 @@ $app->post('/urls', function ($request, Response $response) {
 
     if ($validation->validate()) {
         $extractQuery = "SELECT id FROM urls WHERE name=:urlname";
-        $stmt = $this->get('connectionDB')->prepare($extractQuery);
+        $stmt = $this->get('connectionDB')->getConnect()->prepare($extractQuery);
         $stmt->bindParam(':urlname', $urlName);
         $stmt->execute();
         $resultQueryDB = $stmt->fetch();
 
         if (empty($resultQueryDB)) {
             $insertQuery = "INSERT INTO urls (name) VALUES (:name)";
-            $stmt1 = $this->get('connectionDB')->prepare($insertQuery);
+            $stmt1 = $this->get('connectionDB')->getConnect()->prepare($insertQuery);
             $stmt1->bindParam(':name', $urlName);
             $stmt1->execute();
-            $id = $this->get('connectionDB')->lastInsertId();
+            $id = $this->get('connectionDB')->getConnect()->lastInsertId();
             $messageText = 'Страница успешно добавлена';
         } else {
             $id = is_array($resultQueryDB) ? $resultQueryDB['id'] : null;
             $messageText = 'Страница уже существует';
         }
 
-        // Set flash message for next request
         $this->get('flash')->addMessage('success', $messageText);
         $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$id"]);
 
@@ -121,7 +110,7 @@ $app->get('/urls', function ($request, Response $response) use ($timeZoneName) {
             )
         ORDER BY u.created_at DESC
     ";
-    $stmt = $this->get('connectionDB')->get()->prepare($extractQuery);
+    $stmt = $this->get('connectionDB')->getConnect()->prepare($extractQuery);
     $stmt->bindParam(':timeZoneName', $timeZoneName);
     $stmt->execute();
     $arrayUrls = $stmt->fetchAll();
@@ -143,7 +132,7 @@ $app->get(
             FROM urls
             WHERE id = :id
         ";
-        $stmt1 = $this->get('connectionDB')->get()->prepare($extractQuery1);
+        $stmt1 = $this->get('connectionDB')->getConnect()->prepare($extractQuery1);
         $stmt1->bindParam(':id', $id);
         $stmt1->bindParam(':timeZoneName', $timeZoneName);
         $stmt1->execute();
@@ -161,15 +150,13 @@ $app->get(
             WHERE url_id=:url_id
             ORDER BY check_created_at DESC
         ";
-        $stmt2 = $this->get('connectionDB')->get()->prepare($extractQuery2);
+        $stmt2 = $this->get('connectionDB')->getConnect()->prepare($extractQuery2);
         $stmt2->bindParam(':url_id', $id);
         $stmt2->bindParam(':timeZoneName', $timeZoneName);
         $stmt2->execute();
         $param2 = $stmt2->fetchAll();
 
-        // Get flash messages from previous request
         $flash = $this->get('flash');
-        // Get messages from a specific key
         $param3 = $flash->getMessages();
 
         $params = [
@@ -177,7 +164,6 @@ $app->get(
             'checks' => $param2,
             'flashMessages' => $param3
         ];
-
 
         return $this->get('renderer')->render($response, 'check.phtml', $params);
     }
@@ -189,26 +175,23 @@ $app->post(
         $urlId = $args['url_id'];
 
         $extractQuery = "SELECT name FROM urls WHERE id = :id";
-        $stmt1 = $this->get('connectionDB')->get()->prepare($extractQuery);
+        $stmt1 = $this->get('connectionDB')->getConnect()->prepare($extractQuery);
         $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
         $stmt1->execute();
         $result = $stmt1->fetch();
         $urlName = is_array($result) && array_key_exists('name', $result) ? $result['name'] : null;
 
         try {
-            // create new client Guzzle
             $client = new Client();
-            // run GET-request
             $response = $client->request('GET', $urlName);
             $statusCode = $response->getStatusCode();
-            // create new HTML-document
+
             $document = new Document($urlName, true);
-            // get raw h1, title, description
             $rawH1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : '';
             $rawTitle = $document->first('title') ? substr($document->first('title')->text(), 0, 255) : '';
             $metaElement = $document->first('meta[name="description"]');
             $rawDescription = $metaElement ? $metaElement->getAttribute('content') : '';
-            //get h1, title, description
+
             $h1 = empty($rawH1) ? '' : mb_convert_encoding($rawH1, "UTF-8");
             $title = empty($metaElement) ? '' : mb_convert_encoding($rawTitle, "UTF-8");
             $description = empty($rawDescription) ? '' : mb_convert_encoding($rawDescription, "UTF-8");
@@ -217,7 +200,7 @@ $app->post(
                 INSERT INTO url_checks (url_id, status_code, h1, title, description) 
                 VALUES (:urlId, :statusCode, :h1, :title, :description)
             ";
-            $stmt = $this->get('connectionDB')->get()->prepare($insertQuery);
+            $stmt = $this->get('connectionDB')->getConnect()->prepare($insertQuery);
             $stmt->bindParam(':urlId', $urlId);
             $stmt->bindParam(':statusCode', $statusCode);
             $stmt->bindParam(':h1', $h1);
@@ -244,5 +227,4 @@ $app->post(
     }
 )->setName('checkUrls');
 
-// Run app
 $app->run();
