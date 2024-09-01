@@ -191,7 +191,9 @@ $app->post(
             $statusCode = $response->getStatusCode();
 
             $document = new Document($urlName, true);
+            // @phpstan-ignore-next-line
             $rawH1 = $document->first('h1') ? substr($document->first('h1')->text(), 0, 255) : '';
+            // @phpstan-ignore-next-line
             $rawTitle = $document->first('title') ? substr($document->first('title')->text(), 0, 255) : '';
             $metaElement = $document->first('meta[name="description"]');
             $rawDescription = $metaElement ? $metaElement->getAttribute('content') : '';

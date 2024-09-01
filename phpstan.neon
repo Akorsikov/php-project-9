@@ -2,6 +2,8 @@ parameters:
   level: 9
   paths:
     - code
+    - public
+    - src
   fileExtensions:
     - php
 
