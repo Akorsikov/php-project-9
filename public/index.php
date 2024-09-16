@@ -37,6 +37,10 @@ $container->set('flash', function () {
     return new Messages();
 });
 
+// $initFilePath = implode('/', [dirname(__DIR__), 'database.sql']);
+// $initSql = file_get_contents($initFilePath);
+// $container->get('connectionDB')->getConnect()->exec($initSql);
+
 $app = AppFactory::createFromContainer($container);
 
 $router = $app->getRouteCollector()->getRouteParser();
@@ -138,9 +142,9 @@ $app->get(
         $stmt1->execute();
         $param1 = $stmt1->fetch();
 
-        if (empty($param1)) {
-            return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
-        }
+        // if (empty($param1)) {
+        //     return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
+        // }
 
         $extractQuery2 = "
             SELECT
