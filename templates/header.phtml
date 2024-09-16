@@ -12,6 +12,9 @@
         <nav class="navbar navbar-expand-md navbar-dark bg-dark px-3">
             <a class="navbar-brand" href="/">Анализатор страниц</a>
             <ul class="navbar-nav">
+                <!-- так стоит делать? спросить у Игоря -->
+                <?= $choice = $choice ?? ""; ?>
+                <!-- ---------------------------------- -->
                 <li class="nav-item">
                     <a class="nav-link <?= ($choice === 'main') ? 'active' : ''; ?>" href="/">Главная</a>
                 </li>
