@@ -17,6 +17,7 @@ use Php\Project\Connection;
 
 session_start();
 
+const DATABASE_SCHEME = 'database.sql';
 $timeZoneName = 'MSK';
 
 if (empty($_ENV['DATABASE_URL'])) {
@@ -37,9 +38,11 @@ $container->set('flash', function () {
     return new Messages();
 });
 
-// $initFilePath = implode('/', [dirname(__DIR__), 'database.sql']);
-// $initSql = file_get_contents($initFilePath);
-// $container->get('connectionDB')->getConnect()->exec($initSql);
+$initFilePath = implode('/', [dirname(__DIR__), DATABASE_SCHEME]);
+$initSql = file_get_contents($initFilePath);
+// @phpstan-ignore-next-line
+$container->get('connectionDB')->getConnect()->exec($initSql);
+// Иначе phpstan ругается: Cannot call method getConnect() on mixed.
 
 $app = AppFactory::createFromContainer($container);
 
