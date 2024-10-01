@@ -46,9 +46,12 @@ $container->get('connectionDB')->getConnect()->exec($initSql);
 
 $app = AppFactory::createFromContainer($container);
 
+$errorMiddleware = $app->addErrorMiddleware(false, false, false);
+$app->add(MethodOverrideMiddleware::class);
+
 $router = $app->getRouteCollector()->getRouteParser();
 
-$errorMiddleware = $app->addErrorMiddleware(true, true, true);
+$errorMiddleware = $app->addErrorMiddleware(false, false, false);
 $app->add(MethodOverrideMiddleware::class);
 
 $app->get('/', function ($request, Response $response) {
@@ -145,9 +148,9 @@ $app->get(
         $stmt1->execute();
         $param1 = $stmt1->fetch();
 
-        // if (empty($param1)) {
-        //     return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
-        // }
+        if (empty($param1)) {
+            return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
+        }
 
         $extractQuery2 = "
             SELECT
@@ -190,11 +193,17 @@ $app->post(
         $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
         $stmt1->execute();
         $result = $stmt1->fetch();
+
+        if (empty($result)) {
+            return $this->get('renderer')->render($response->withStatus(404), 'error404.phtml');
+        }
+
         $urlName = is_array($result) && array_key_exists('name', $result) ? $result['name'] : null;
 
         try {
             $client = new Client();
             $response = $client->request('GET', $urlName);
+            $a = $response;
             $statusCode = $response->getStatusCode();
 
             $document = new Document($urlName, true);
@@ -224,15 +233,33 @@ $app->post(
             $messageStatus = 'success';
             $messageText = 'Страница успешно проверена';
             $this->get('flash')->addMessage($messageStatus, $messageText);
-        } catch (GuzzleHttp\Exception\TransferException) {
-            $messageStatus = 'danger';
-            $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
+            $pageHtml = '';
+        } catch (GuzzleHttp\Exception\TransferException $exception) {
+            // @phpstan-ignore-next-line
+            $curlCode = $exception->getHandlerContext()['errno'];
+            switch ($curlCode) {
+                case 60: // PEER failed verification
+                    $messageStatus = 'warning';
+                    $messageText = 'Проверка была выполнена успешно, но сервер ответил с ошибкой';
+                    $pageHtml = $this->get('renderer')->render($response, 'error500.phtml');
+                    break;
+                case 6: // Couldn’t resolve host
+                    $pageHtml = $this->get('renderer')->render($response, 'error404.phtml');
+                    // no break
+                default:
+                    $messageStatus = 'danger';
+                    $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
+            }
+
             $this->get('flash')->addMessage($messageStatus, $messageText);
         } catch (PDOException $Exception) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при записи в базу данных';
             $this->get('flash')->addMessage($messageStatus, $messageText);
         } finally {
+            if (!empty($pageHtml)) {
+                return $pageHtml;
+            }
             $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$urlId"]);
 
             return $response->withStatus(302)->withHeader('Location', $url);
