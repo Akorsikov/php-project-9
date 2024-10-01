@@ -62,7 +62,7 @@ $app->get('/', function ($request, Response $response) {
 
 $app->post('/urls', function ($request, Response $response) {
     $url = $request->getParsedBodyParam('url');
-    $urlName = $url['name'];
+    $urlName = htmlspecialchars($url['name']);
 
     $rules = ['required', 'url', ['lengthMax', 255]];
     $validation = new Validator(['urlname' => $urlName]);

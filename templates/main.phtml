@@ -11,7 +11,7 @@
                             <input
                                 type="text"
                                 name="url[name]"
-                                value="<?= $safetyUrlName = htmlspecialchars($urlName) ?? null; ?>"
+                                value="<?= $urlName ?? null; ?>"
                                 class="form-control form-control-lg <?= isset($errors) ? 'is-invalid' : '';?>"
                                 placeholder="https://www.example.com"
                             >
