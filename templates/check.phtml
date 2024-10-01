@@ -8,7 +8,7 @@
     <?php endif; ?>
     <main class="flex-grow-1">
         <div class="container-lg mt-3">
-            <h1>Сайт: <?= $url['name']; ?></h1>
+            <h1>Сайт: <?=htmlspecialchars($url['name']); ?></h1>
             <div class="table-responsive">
                 <table class="table table-bordered table-hover text-nowrap" data-test="url">
                     <tbody>
@@ -18,7 +18,7 @@
                         </tr>
                         <tr>
                             <td>Имя</td>
-                            <td><?= $url['name']; ?></td>
+                            <td><?= htmlspecialchars($url['name']); ?></td>
                         </tr>
                         <tr>
                             <td>Дата создания</td>
