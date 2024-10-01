@@ -8,4 +8,18 @@
 
 [![Maintainability](https://api.codeclimate.com/v1/badges/d8da1916f27c2e9f55aa/maintainability)](https://codeclimate.com/github/Akorsikov/php-project-9/maintainability)
 
-## [Deploy](https://site-analyser.onrender.com)
+## [Demo](https://site-analyser.onrender.com)
+
+## Requirements
+
+* PHP >=8.0
+* Composer
+
+## Usage
+
+```bash
+make setup
+make start
+```
+
+Open in browser: http://localhost:8080
