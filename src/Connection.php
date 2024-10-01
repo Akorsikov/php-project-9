@@ -6,17 +6,17 @@ class Connection
 {
     private \PDO $connectionDB;
 
-    public function __construct(string $stringBaseUrl)
+    private function getConnectStringDB(string $stringBaseUrl)
     {
         $databaseUrl = parse_url($stringBaseUrl);
 
-        $host = $databaseUrl['host'] ?? null;
+        $host = $databaseUrl['host'] ?? '';
         $port = $databaseUrl['port'] ?? 5432;
         $dbname = ltrim($databaseUrl['path'] ?? '', '/');
-        $user = $databaseUrl['user'] ?? null;
-        $password = $databaseUrl['pass'] ?? null;
+        $user = $databaseUrl['user'] ?? '';
+        $password = $databaseUrl['pass'] ?? '';
 
-        $connectString = sprintf(
+        return sprintf(
             "pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s",
             $host,
             $port,
@@ -24,6 +24,11 @@ class Connection
             $user,
             $password
         );
+    }
+
+    public function __construct(string $DataBaseUrl)
+    {
+        $connectString = $this->getConnectStringDB($DataBaseUrl);
 
         $this->connectionDB = new \PDO($connectString);
         $this->connectionDB->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
