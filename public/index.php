@@ -22,10 +22,6 @@ use Slim\Psr7\Request;
 session_start();
 
 const DATABASE_SCHEME = 'database.sql';
-const CURL_CODES =
-    [
-        60, // PEER failed verification
-    ];
 $timeZoneName = 'MSK';
 
 if (empty($_ENV['DATABASE_URL'])) {
@@ -56,8 +52,6 @@ $app = AppFactory::createFromContainer($container);
 
 $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
-
-// $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/', function ($request, Response $response) {
     $params = ['choice' => 'main'];
@@ -196,7 +190,7 @@ $app->post(
 
         $extractQuery = "SELECT name FROM urls WHERE id = :id";
         $stmt1 = $this->get('connectionDB')->getConnect()->prepare($extractQuery);
-        $stmt1->bindParam(':id', $urlId); // urls.id = url_checks.url_id
+        $stmt1->bindParam(':id', $urlId);
         $stmt1->execute();
         $result = $stmt1->fetch();
 
