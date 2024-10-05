@@ -11,13 +11,21 @@ use Slim\Views\PhpRenderer;
 use Slim\Middleware\MethodOverrideMiddleware;
 use Valitron\Validator;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\RequestException;
+use GuzzleHttp\Exception\ConnectException;
 use DiDom\Document;
 use Dotenv\Dotenv;
+use GuzzleHttp\Psr7\Request as Psr7Request;
 use Php\Project\Connection;
+use Slim\Psr7\Request;
 
 session_start();
 
 const DATABASE_SCHEME = 'database.sql';
+const CURL_CODES =
+    [
+        60, // PEER failed verification
+    ];
 $timeZoneName = 'MSK';
 
 if (empty($_ENV['DATABASE_URL'])) {
@@ -46,13 +54,10 @@ $container->get('connectionDB')->getConnect()->exec($initSql);
 
 $app = AppFactory::createFromContainer($container);
 
-$errorMiddleware = $app->addErrorMiddleware(false, false, false);
+$errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 
-$router = $app->getRouteCollector()->getRouteParser();
-
-$errorMiddleware = $app->addErrorMiddleware(false, false, false);
-$app->add(MethodOverrideMiddleware::class);
+// $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/', function ($request, Response $response) {
     $params = ['choice' => 'main'];
@@ -130,7 +135,7 @@ $app->get('/urls', function ($request, Response $response) use ($timeZoneName) {
 })->setName('viewUrls');
 
 $app->get(
-    '/urls/{id}',
+    '/urls/{id:[0-9]+}',
     function ($request, Response $response, array $args) use ($timeZoneName) {
         $id = $args['id'];
 
@@ -184,7 +189,7 @@ $app->get(
 )->setName('checkUrls');
 
 $app->post(
-    '/urls/{url_id}/checks',
+    '/urls/{url_id:[0-9]+}/checks',
     function ($request, Response $response, array $args) {
         $urlId = $args['url_id'];
 
@@ -203,7 +208,20 @@ $app->post(
         try {
             $client = new Client();
             $response = $client->request('GET', $urlName);
-            $a = $response;
+        } catch (RequestException) {
+            $messageStatus = 'warning';
+            $messageText = 'Проверка была выполнена успешно, но сервер ответил с ошибкой';
+            $this->get('flash')->addMessage($messageStatus, $messageText);
+
+            return $this->get('renderer')->render($response->withStatus(500), 'error500.phtml');
+        } catch (ConnectException) {
+            $messageStatus = 'danger';
+            $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
+            $this->get('flash')->addMessage($messageStatus, $messageText);
+            $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$urlId"]);
+
+            return $response->withStatus(302)->withHeader('Location', $url);
+        }
             $statusCode = $response->getStatusCode();
 
             $document = new Document($urlName, true);
@@ -229,42 +247,25 @@ $app->post(
             $stmt->bindParam(':title', $title);
             $stmt->bindParam(':description', $description);
 
+        try {
             $stmt->execute();
             $messageStatus = 'success';
             $messageText = 'Страница успешно проверена';
             $this->get('flash')->addMessage($messageStatus, $messageText);
-            $pageHtml = '';
-        } catch (GuzzleHttp\Exception\TransferException $exception) {
-            // @phpstan-ignore-next-line
-            $curlCode = $exception->getHandlerContext()['errno'];
-            switch ($curlCode) {
-                case 60: // PEER failed verification
-                    $messageStatus = 'warning';
-                    $messageText = 'Проверка была выполнена успешно, но сервер ответил с ошибкой';
-                    $pageHtml = $this->get('renderer')->render($response, 'error500.phtml');
-                    break;
-                case 6: // Couldn’t resolve host
-                    $pageHtml = $this->get('renderer')->render($response, 'error404.phtml');
-                    // no break
-                default:
-                    $messageStatus = 'danger';
-                    $messageText = 'Произошла ошибка при проверке, не удалось подключиться';
-            }
-
-            $this->get('flash')->addMessage($messageStatus, $messageText);
-        } catch (PDOException $Exception) {
+        } catch (PDOException) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при записи в базу данных';
             $this->get('flash')->addMessage($messageStatus, $messageText);
         } finally {
-            if (!empty($pageHtml)) {
-                return $pageHtml;
-            }
             $url = RouteContext::fromRequest($request)->getRouteParser()->urlFor('checkUrls', ['id' => "$urlId"]);
 
             return $response->withStatus(302)->withHeader('Location', $url);
         }
     }
 )->setName('checkUrls');
+
+$app->map(['GET', 'POST'], '/{routes:.+}', function ($request, $response) {
+    return $this->get('renderer')->render($response, 'error404.phtml');
+})->setName('not-found');
 
 $app->run();
