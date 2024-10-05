@@ -35,4 +35,4 @@ jobs:
 
       - name: Run PHPStan
         # Run PHPUnit test
-        run: make analise
+        run: make analyse
