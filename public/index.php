@@ -181,7 +181,8 @@ $app->get(
         $params = [
             'url' => $param1,
             'checks' => $param2,
-            'flashMessages' => $param3
+            'flashMessages' => $param3,
+            'choice' => ''
         ];
 
         return $this->get('renderer')->render($response, 'check.phtml', $params);
