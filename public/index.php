@@ -22,7 +22,7 @@ use Slim\Psr7\Request;
 session_start();
 
 const DATABASE_SCHEME = 'database.sql';
-$timeZoneName = 'MSK';
+const TIME_ZONE_NAME = 'MSK';
 
 if (empty($_ENV['DATABASE_URL'])) {
     Dotenv::createImmutable(__DIR__ . '/../')->load();
@@ -102,7 +102,7 @@ $app->post('/urls', function ($request, Response $response) {
     return $this->get('renderer')->render($response->withStatus(422), 'main.phtml', $params);
 })->setName('validateUrls');
 
-$app->get('/urls', function ($request, Response $response) use ($timeZoneName) {
+$app->get('/urls', function ($request, Response $response) {
     $extractQuery = "
         SELECT
             u.id,
@@ -120,7 +120,7 @@ $app->get('/urls', function ($request, Response $response) use ($timeZoneName) {
         ORDER BY u.created_at DESC
     ";
     $stmt = $this->get('connectionDB')->getConnect()->prepare($extractQuery);
-    $stmt->bindParam(':timeZoneName', $timeZoneName);
+    $stmt->bindValue(':timeZoneName', TIME_ZONE_NAME);
     $stmt->execute();
     $arrayUrls = $stmt->fetchAll();
     $params = ['urls' => $arrayUrls, 'choice' => 'view'];
@@ -130,7 +130,7 @@ $app->get('/urls', function ($request, Response $response) use ($timeZoneName) {
 
 $app->get(
     '/urls/{id:[0-9]+}',
-    function ($request, Response $response, array $args) use ($timeZoneName) {
+    function ($request, Response $response, array $args) {
         $id = $args['id'];
 
         $extractQuery1 = "
@@ -143,7 +143,7 @@ $app->get(
         ";
         $stmt1 = $this->get('connectionDB')->getConnect()->prepare($extractQuery1);
         $stmt1->bindParam(':id', $id);
-        $stmt1->bindParam(':timeZoneName', $timeZoneName);
+        $stmt1->bindValue(':timeZoneName', TIME_ZONE_NAME);
         $stmt1->execute();
         $param1 = $stmt1->fetch();
 
@@ -165,7 +165,7 @@ $app->get(
         ";
         $stmt2 = $this->get('connectionDB')->getConnect()->prepare($extractQuery2);
         $stmt2->bindParam(':url_id', $id);
-        $stmt2->bindParam(':timeZoneName', $timeZoneName);
+        $stmt2->bindValue(':timeZoneName', TIME_ZONE_NAME);
         $stmt2->execute();
         $param2 = $stmt2->fetchAll();
 
