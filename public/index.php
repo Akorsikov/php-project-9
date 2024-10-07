@@ -54,9 +54,8 @@ $errorMiddleware = $app->addErrorMiddleware(true, true, true);
 $app->add(MethodOverrideMiddleware::class);
 
 $app->get('/', function ($request, Response $response) {
-    $params = ['choice' => 'main'];
 
-    return $this->get('renderer')->render($response, 'main.phtml', $params);
+    return $this->get('renderer')->render($response, 'main.phtml');
 })->setName('main');
 
 $app->post('/urls', function ($request, Response $response) {
@@ -95,8 +94,7 @@ $app->post('/urls', function ($request, Response $response) {
     $errorMessages = is_bool($errors) ? null : $errors['urlname'];
     $params = [
         'urlName' => $urlName,
-        'errors' => $errorMessages,
-        'choice' => 'main'
+        'errors' => $errorMessages
     ];
 
     return $this->get('renderer')->render($response->withStatus(422), 'main.phtml', $params);
@@ -123,7 +121,7 @@ $app->get('/urls', function ($request, Response $response) {
     $stmt->bindValue(':timeZoneName', TIME_ZONE_NAME);
     $stmt->execute();
     $arrayUrls = $stmt->fetchAll();
-    $params = ['urls' => $arrayUrls, 'choice' => 'view'];
+    $params = ['urls' => $arrayUrls];
 
     return $this->get('renderer')->render($response, 'view.phtml', $params);
 })->setName('viewUrls');
@@ -175,8 +173,7 @@ $app->get(
         $params = [
             'url' => $param1,
             'checks' => $param2,
-            'flashMessages' => $param3,
-            'choice' => ''
+            'flashMessages' => $param3
         ];
 
         return $this->get('renderer')->render($response, 'check.phtml', $params);

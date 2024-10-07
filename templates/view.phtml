@@ -1,4 +1,4 @@
-<?php require __DIR__ . '/../templates/header.phtml'; ?>
+<?= $this->fetch('header.phtml', ['choice' => 'view']) ?>
     <main class="flex-grow-1">
         <div class="container-lg mt-3">
             <h1>Сайты</h1>
@@ -26,4 +26,4 @@
             </div>
         </div>
     </main>
-<?php require __DIR__ . '/../templates/footer.phtml'; ?>
+<?= $this->fetch('footer.phtml'); ?>

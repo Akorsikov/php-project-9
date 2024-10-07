@@ -1,4 +1,4 @@
-<?php require __DIR__ . '/../templates/header.phtml'; ?>
+<?= $this->fetch('header.phtml', ['choice' => '']); ?>
     <?php if (!empty($flashMessages)): ?>
         <div
             class="alert alert-<?= $key = key($flashMessages) ?>"
@@ -57,4 +57,4 @@
             </table>
         </div>
     </main>
-<?php require __DIR__ . '/../templates/footer.phtml'; ?>
+<?= $this->fetch('footer.phtml'); ?>
