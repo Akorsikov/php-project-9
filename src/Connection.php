@@ -10,11 +10,11 @@ class Connection
     {
         $databaseUrl = parse_url($stringBaseUrl);
 
-        $host = $databaseUrl['host'] ?? '';
-        $port = $databaseUrl['port'] ?? 5432;
-        $dbname = ltrim($databaseUrl['path'] ?? '', '/');
-        $user = $databaseUrl['user'] ?? '';
-        $password = $databaseUrl['pass'] ?? '';
+        $host = $databaseUrl['host'];
+        $port = $databaseUrl['port'];
+        $dbname = ltrim($databaseUrl['path'], '/');
+        $user = $databaseUrl['user'];
+        $password = $databaseUrl['pass'];
 
         return sprintf(
             "pgsql:host=%s;port=%d;dbname=%s;user=%s;password=%s",
