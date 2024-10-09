@@ -203,9 +203,11 @@ $app->post(
         } catch (RequestException) {
             $messageStatus = 'warning';
             $messageText = 'Проверка была выполнена успешно, но сервер ответил с ошибкой';
-            $this->get('flash')->addMessage($messageStatus, $messageText);
+            $flash = [$messageStatus => [$messageText]];
 
-            return $this->get('renderer')->render($response->withStatus(500), 'error500.phtml');
+            return $this
+                ->get('renderer')
+                ->render($response->withStatus(500), 'error500.phtml', ['flashMessages' => $flash]);
         } catch (ConnectException) {
             $messageStatus = 'danger';
             $messageText = 'Произошла ошибка при проверке, не удалось подключиться';

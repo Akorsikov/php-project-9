@@ -1,4 +1,11 @@
 <?= $this->fetch('header.phtml', ['choice' => '']) ?>
+    <?php if (!empty($flashMessages)): ?>
+        <div
+            class="alert alert-<?= $key = key($flashMessages) ?>"
+            role="alert">
+                <?= $flashMessages[$key][0] ?>
+        </div>
+    <?php endif; ?>
     <main class="flex-grow-1">
         <div class="container-lg mt-3">
             <h1>Упс что-то пошло не так</h1>
