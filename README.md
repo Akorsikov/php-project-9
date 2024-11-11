@@ -8,7 +8,7 @@
 
 [![PHP CI](https://github.com/Akorsikov/php-project-9/actions/workflows/workflow.yml/badge.svg)](https://github.com/Akorsikov/php-projSSmolmolect-9/actions/workflows/workflow.yml)
 
-[![Maintainability](https://api.codeclimate.com/v1/badges/d8da1916f27c2e9f55aa/maintainability)](https://codeclimate.com/github/Akorsikov/php-project-9/maintainability)
+[![Maintainability](https://api.codeclimate.com/v1/badges/09520311134571c329b2/maintainability)](https://codeclimate.com/github/Akorsikov/page-analyzer/maintainability)
 
 ## [Demo](https://site-analyser.onrender.com)
 
